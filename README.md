@@ -1,7 +1,7 @@
 welcome to kwoncy's repos.
 
 currently working as a AI researcher.
-although it's called AI researcher officially, not only researches, it might be regarded as a AI developer in my case.
+although it's called AI researcher officially, I quite work as a developer as well.
 
 ***
 ## here's my project as a AI researcher
