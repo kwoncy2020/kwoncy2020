@@ -5,21 +5,22 @@ although it's called AI researcher officially, I quite work as a developer as we
 
 ***
 ## here's my project as a AI researcher
+* auto detect stroke in dysarthria patients voice ( custom model consists of custom resnet and custom transformer - model2.py )
+  - https://github.com/kwoncy2020/dysarthria_stroke_auto_detection
+    - tensorflow, librosa
+    
+* nystagmus tool for helping the project named "nystagmus auto detection" 
+  - https://github.com/kwoncy2020/nystagmus-tool
+    - pyqt5, tensorflow, opencv, numpy, matplotlib
+    
 * nystagmus auto detection on medical video 
   - https://github.com/kwoncy2020/nystagmus_auto_detection
     - tensorflow, scikit-learn, opencv, numpy, matplotlib
 
-* nystagmus tool for helping the project named "nystagmus auto detection" 
-  - https://github.com/kwoncy2020/nystagmus-tool
-    - pyqt5, tensorflow, opencv, numpy, matplotlib
-  
 * nystagmus tool with mfc (this is just a temporal project due to its development time. you can see how to connect tensorflow model made by python to c++)
   - https://github.com/kwoncy2020/load-tensorflow-model-on-cplusplus-with-opencv
     - c++, mfc, opencv, tensorflow, pytorch
 
-* auto detect stroke in dysarthria patients voice ( custom model consists of custom resnet and custom transformer - model2.py )
-  - https://github.com/kwoncy2020/dysarthria_stroke_auto_detection
-    - tensorflow, librosa
 
 ***
 ## my amature personal project before becoming a developer
