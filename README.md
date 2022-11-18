@@ -22,6 +22,12 @@ although it's called AI researcher officially, I quite work as a developer as we
     - c++, mfc, opencv, tensorflow, pytorch
 
 
+*** 
+## my personal project
+* my first flutter app
+  - https://github.com/kwoncy2020/my-first-flutter-app
+    - flutter, dart, GetX, Hive
+
 ***
 ## my amature personal project before becoming a developer
 * image processing practice tool
