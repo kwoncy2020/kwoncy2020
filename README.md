@@ -1,10 +1,16 @@
 welcome to kwoncy's repos.
 
 currently working as a AI researcher.
-although it's called AI researcher officially, I quite work as a developer as well.
+although it's called AI researcher officially, I quite work as a AI engineer as well.
 
 ***
 ## here's my project as a AI researcher
+
+* xcode object detection (barcode, qrcode, mpcode, pdf417, dmtx)
+  - https://github.com/kwoncy2020/ssd-pytorch-qfgaohao
+    - pytorch, tensorflow lite c, c++, opencv, pyqt, bazel, android ndk, 
+
+
 * auto detect stroke in dysarthria patients voice ( custom model consists of custom resnet and custom transformer - model2.py )
   - https://github.com/kwoncy2020/dysarthria_stroke_auto_detection
     - tensorflow, librosa
