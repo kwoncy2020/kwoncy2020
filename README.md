@@ -1,10 +1,12 @@
 welcome to kwoncy's repos.
 
-currently working as a AI researcher.
-although it's called AI researcher officially, I quite work as a AI engineer as well.
+currently working as a AI Engineer.
 
-***
-## here's my project as a AI researcher
+## here's my project as a AI Engineer
+
+* inference quantized model on mobile with c++
+  - https://github.com/kwoncy2020/tflite_dlc_for_android
+    - qualcomm snpe sdk, tflite hexagon, nnapi delegates
 
 * xcode object detection (barcode, qrcode, mpcode, pdf417, dmtx)
   - https://github.com/kwoncy2020/ssd-pytorch-qfgaohao
