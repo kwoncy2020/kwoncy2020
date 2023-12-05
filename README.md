@@ -4,6 +4,10 @@ currently working as a AI Engineer.
 
 ## here's my project as a AI Engineer
 
+* ort training with realtime lightweight hybrid detector model.
+  - https://github.com/kwoncy2020/ort_training
+    - hybrid detector, onnxruntime, onnx, on-device training
+      
 * inference quantized model on mobile with c++
   - https://github.com/kwoncy2020/tflite_dlc_for_android
     - qualcomm snpe sdk, tflite hexagon, nnapi delegates
