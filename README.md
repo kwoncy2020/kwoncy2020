@@ -5,15 +5,15 @@ currently working as a AI Engineer.
 ## here's my project as a AI Engineer
 
 * ort training with realtime lightweight hybrid detector model.
-  - https://github.com/kwoncy2020/ort_training
+  - https://github.com/kwoncy2020/ort_training (currently not on public for security reason)
     - hybrid detector, onnxruntime, onnx, on-device training
       
 * inference quantized model on mobile with c++
-  - https://github.com/kwoncy2020/tflite_dlc_for_android
+  - https://github.com/kwoncy2020/tflite_dlc_for_android (currently not on public for security reason)
     - qualcomm snpe sdk, tflite hexagon, nnapi delegates
 
 * xcode object detection (barcode, qrcode, mpcode, pdf417, dmtx)
-  - https://github.com/kwoncy2020/ssd-pytorch-qfgaohao
+  - https://github.com/kwoncy2020/ssd-pytorch-qfgaohao (currently not on public for security reason)
     - pytorch, tensorflow lite c, c++, opencv, pyqt, bazel, android ndk, 
 
 
