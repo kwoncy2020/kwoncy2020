@@ -97,3 +97,7 @@ While struggling, luckly, I finally found how to fix tensorflowlite_c.dll symbol
 * I got it! Finally build tensorflowlite_c.dll with cmake, compiler and python interpreter.
 
 ![fix_exports_symbols_on_windows_compile_preblem_solve4](./images/17_fix_exports_symbols_on_windows_compile_preblem_solve4.jpg)
+
+***
+* My first pull request. It's monumental.
+![fix_exports_symbols_on_windows_compile_preblem_solve5](./images/18_fix_exports_symbols_on_windows_compile_preblem_solve5.jpg)
