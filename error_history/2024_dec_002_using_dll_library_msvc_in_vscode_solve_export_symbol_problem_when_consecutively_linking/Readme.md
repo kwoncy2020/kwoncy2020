@@ -101,3 +101,10 @@ While struggling, luckly, I finally found how to fix tensorflowlite_c.dll symbol
 ***
 * My first pull request. It's monumental.
 ![fix_exports_symbols_on_windows_compile_preblem_solve5](./images/18_fix_exports_symbols_on_windows_compile_preblem_solve5.jpg)
+
+
+***
+* My first pull request approved! I'm glad to contribute to famous library.
+![19_fix_exports_symbols_on_windows_compile_preblem_solve6_pull_requess_approved](./images/19_fix_exports_symbols_on_windows_compile_preblem_solve6_pull_requess_approved.jpg)
+
+

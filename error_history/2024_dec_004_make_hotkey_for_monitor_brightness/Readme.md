@@ -11,9 +11,9 @@ Finally, I made program using wmi system in c++. There's another way you can use
 
 ***
 * Keep failing when I try to use win32 api to control my notebook's brightness.
-![make_hotkey_for_monitor_brightness_problem1](./images/make_hotkey_for_monitor_brightness_problem1.jpg)
+![make_hotkey_for_monitor_brightness_problem1](./images/01_make_hotkey_for_monitor_brightness_problem1.jpg)
 
 
 ***
 * It seems that I need to find another way.
-![make_hotkey_for_monitor_brightness_problem2](./images/make_hotkey_for_monitor_brightness_problem2.jpg)
+![make_hotkey_for_monitor_brightness_problem2](./images/02_make_hotkey_for_monitor_brightness_problem2.jpg)
