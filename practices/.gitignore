@@ -1,0 +1,14 @@
+*.dll
+*.lib
+*.pdb
+*.ilk
+*.exe
+*.obj
+*.tflite
+*.onnx
+
+*_test.png
+binary_*
+*.ninja*
+CMakeFiles
+*.cmake
