@@ -4,6 +4,8 @@ Once I succeed to build tensorflowlite_c.dll, befor I using it, I try to use ano
 
 While struggling, luckly, I finally found how to fix tensorflowlite_c.dll symbol export problem. If you want to know that quickly, then please scroll down until reach the bottom and see several images.
 
+## 2024/12/16 My first pull request approved.
+## 2025/1/06 I got email that my request merged #82798 into master. I made my first pull request on one of the famous library. And the bug I fixed had been over a year because I remember that around 1 year and half ago I failed at that time I almost new to cmake, unix system(WSL2) and build systems so I could'nt dare to try to fix it. 
 
 ***
 * Using prebuilt my simple dll library to test. this simple dll has two export functions (mydiff, mysum).
