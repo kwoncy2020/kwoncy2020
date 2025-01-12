@@ -1,11 +1,15 @@
 *.dll
 *.lib
+*.exp
 *.pdb
 *.ilk
 *.exe
 *.obj
 *.tflite
 *.onnx
+
+*_test.png
+*_test.jpg
 
 binary_*
 *.ninja*
