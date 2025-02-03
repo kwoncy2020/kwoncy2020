@@ -4,9 +4,9 @@ I can assume that the test done on AMD APU and windows os so the onnxruntime lib
 
 ***
 * Latency time almost same whether xnnpack adapted or not.
-![01_using_onnxruntime_dll_with_xnnpack_and_dml](./images/01_using_onnxruntime_dll_with_xnnpack_and_dml)
+![01_using_onnxruntime_dll_with_xnnpack_and_dml](./images/01_using_onnxruntime_dll_with_xnnpack_and_dml.jpg)
 
 
 ***
 * Inference done with dml acceleration producing a lot of exceptions.
-![02_using_onnxruntime_dll_with_xnnpack_and_dml_problem1](./images/02_using_onnxruntime_dll_with_xnnpack_and_dml_problem1)
+![02_using_onnxruntime_dll_with_xnnpack_and_dml_problem1](./images/02_using_onnxruntime_dll_with_xnnpack_and_dml_problem1.jpg)
