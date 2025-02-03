@@ -1,4 +1,4 @@
-Integrating generate-ai (sml)
+# Integrating generate-ai (sml)
 After I integrate object detection AI model and image enhance AI model on my flutter app, I hope add another kind of AI model such as chatGPT.
 That kind of model is quite huge so it's quite hard to run on edge device. It's not suprise that major frameworks are not that interest running llm models on edge device so not much information. I recently found onnxruntime's examples so I'll try it later. Before I found that one, I just looked into llama.cpp library and try to integrated it. 
 Many errors that I didn't put this repo suffering me so much times.
