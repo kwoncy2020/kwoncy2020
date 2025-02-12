@@ -9,7 +9,7 @@ Many errors that I didn't put this repo suffering me so much times.
 
 
 ***
-* After I inspect the cmake files, I found a condition statement require HIP_PLATFORM value. I put it off.
+* After I inspect the cmake files, I found a condition statement require HIP_PLATFORM value. I put it off. The build completed.
 ![02_llama_build_error1_solve1](./images/02_llama_build_error1_solve1.png)
 
 ***
