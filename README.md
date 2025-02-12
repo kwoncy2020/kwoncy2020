@@ -1,10 +1,9 @@
 Welcome to kwoncy's repos.
 
-Recently moved to Canada to further my career on November 2024.
-
 I'm looking for a job. If you have any information, please let me know I appreciate it. this address would be better : aimakercy24@gmail.com
 
 Now I try to make my own app using recently developped AI models.
+My app should include various ai model such as small llm, object detection and Image Enhancement.
 
 You can see my journey through waves of errors on the above folder named error_history. In there, I solved monumental problem about building library.
 
