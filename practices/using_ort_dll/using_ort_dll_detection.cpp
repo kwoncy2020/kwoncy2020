@@ -10,6 +10,9 @@
 
 #endif
 
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 // #if defined(_WIN32) && defined(STBIW_WINDOWS_UTF8)
 // #define STBI_NEON   // for android
@@ -24,10 +27,14 @@
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "stb_image_resize2.h"
 
+
+
+
 #include "onnxruntime_cxx_api.h"
 #include "dml_provider_factory.h"
 #include <vector>
-
+#include <format>
+#include "using_ort_dll_detection_label_mapping.h"
 
 bool CheckStatus(const OrtApi* g_ort, OrtStatus* status) {
   if (status != nullptr) {
@@ -41,15 +48,20 @@ bool CheckStatus(const OrtApi* g_ort, OrtStatus* status) {
 
 
 int main(){
-    // bool use_xnn=true;
     bool use_xnn=false;
-    bool use_dml=true;
-    // bool use_dml=false;
+    // bool use_xnn=false;
+    // bool use_dml=true;
+    bool use_dml=false;
     
+    // bool use_dml=false;
     int intra_op_num_threads = 4;
     int infer_time_check_loop = 5;
-    std::string file_name = "11_0_test.png";
-    std::wstring model_path = L"my_modified.onnx";
+    // std::string file_name = "11_0_test.png";
+    std::string file_name = "the-lucky-neko-rplhB9mYF48-unsplash.jpg";
+    std::wstring model_path = L"my_modified_rtdetector.onnx";
+    int model_w = 640;
+    int model_h = 640;
+    float score_thres = 0.5;
 
     std::cout << "intra_op_num_threads : " << intra_op_num_threads << std::endl;
     std::cout << "loaded file_name : " << file_name << std::endl;
@@ -59,12 +71,20 @@ int main(){
     // std::string replace_string = "_resized.jpg";
     // const char* file_name{"11_0_test.png"};
     int image_w_orig, image_h_orig, image_comp_orig;
-    unsigned char* image_data = stbi_load(file_name.c_str(),&image_w_orig,&image_h_orig,&image_comp_orig,0);
+    cv::Mat loaded_image = cv::imread(file_name,1);
+    image_w_orig = loaded_image.cols;
+    image_h_orig = loaded_image.rows;
+    image_comp_orig = loaded_image.dims;
+    unsigned char* image_data = loaded_image.data;
+    // unsigned char* image_data = stbi_load(file_name.c_str(),&image_w_orig,&image_h_orig,&image_comp_orig,0);
 
-    int image_w_resized=512;
-    int image_h_resized=512;
-    unsigned char* image_data_resized = stbir_resize_uint8_linear(image_data, image_w_orig, image_h_orig, image_w_orig*image_comp_orig,nullptr,image_w_resized,image_h_resized,image_w_resized*image_comp_orig,STBIR_RGB);
+    int image_w_resized=model_w;
+    int image_h_resized=model_h;
+    // unsigned char* image_data_resized = stbir_resize_uint8_linear(image_data, image_w_orig, image_h_orig, image_w_orig*image_comp_orig,nullptr,image_w_resized,image_h_resized,image_w_resized*image_comp_orig,STBIR_RGB);
     // stbi_write_jpg(file_name.replace(file_name.end()-4,file_name.end(),"_resized.jpg").c_str(),image_w_resized,image_h_resized,image_comp_orig,image_data_resized,80);
+    cv::Mat resized_image;
+    cv::resize(loaded_image,resized_image,cv::Size(model_w,model_h),0,0,cv::INTER_LANCZOS4);
+    unsigned char* image_data_resized = resized_image.data;
 
 #ifdef MyTimeCheck
     _MEASURE_START(prepare_onnxruntime)
@@ -165,14 +185,16 @@ int main(){
     }
     
     OrtMemoryInfo* memory_info;
-    size_t input_data_size = 1*512*512*3;
-    const size_t num_elements = 1*512*512*3;
+    size_t input_data_size = 1*model_h*model_w*3;
+    const size_t num_elements = 1*model_h*model_w*3;
 
     CheckStatus(g_ort, g_ort->CreateCpuMemoryInfo(OrtArenaAllocator, OrtMemTypeDefault, &memory_info));
     size_t input_data_length = input_data_size * sizeof(uint8_t);
     CheckStatus(g_ort,g_ort->CreateTensorWithDataAsOrtValue(memory_info, reinterpret_cast<void*>(image_data_resized), input_data_length,
                             input_node_dims[0].data(), input_node_dims[0].size(), input_types[0], &input_tensors[0]));
-    
+    std::vector<int64_t> input1{model_h,model_w};
+    CheckStatus(g_ort,g_ort->CreateTensorWithDataAsOrtValue(memory_info,reinterpret_cast<void *>(input1.data()),input1.size()*sizeof(int64_t),input_node_dims[1].data(),input_node_dims[1].size(),input_types[1],&input_tensors[1]));
+
     g_ort->ReleaseMemoryInfo(memory_info);
 
 #ifdef MyTimeCheck
@@ -189,25 +211,59 @@ int main(){
                                     input_tensors.size(), output_node_names.data(), output_node_names.size(), output_tensors.data()));
     }
 
+// without nms
+// no xnnpack, no dml prepare = 287 msec, sesseion_run ave : 165 msec
+// true xnnpack, no dml prepare = 330 msec, sesseion_run ave : 235 msec
+// no xnnpack, no dml prepare = 1000 msec, sesseion_run ave : 83 msec
+
+
 #ifdef MyTimeCheck
     _MEASURE_END(onnxruntime_session_run,loop_count)
     // _MEASURE_END(onnxruntime_session_run,1)
 #endif
 
     // float *output_data = (float*)malloc(1*3*512*512*sizeof(float));
-    void* output_buffer;
-    CheckStatus(g_ort,g_ort->GetTensorMutableData(output_tensors[0],&output_buffer));
-    // float* float_buffer = nullptr;
-    // float_buffer = reinterpret_cast<float*>(output_buffer);
-    // unsigned char* output_image_data = (unsigned char*)malloc(1*3*512*512*sizeof(uint8_t));
-    // for (size_t i = 0; i < 1*3*512*512; ++i)
-    // {
-    //     *(output_image_data+i) = *(float_buffer+i)*255;
-    // }
+    void* output_buffer0;
+    void* output_buffer1;
+    void* output_buffer2;
+    size_t num_boxes = output_node_dims[2][1];
+    CheckStatus(g_ort,g_ort->GetTensorMutableData(output_tensors[0],&output_buffer0));
+    CheckStatus(g_ort,g_ort->GetTensorMutableData(output_tensors[1],&output_buffer1));
+    CheckStatus(g_ort,g_ort->GetTensorMutableData(output_tensors[2],&output_buffer2));
     
-    stbi_write_jpg(file_name.replace(file_name.end()-4,file_name.end(),"_output.jpg").c_str(),image_w_resized,image_h_resized,image_comp_orig,output_buffer,80);
 
+    int64_t* labels_ptr = reinterpret_cast<int64_t*>(output_buffer0);
+    float* boxes_ptr = reinterpret_cast<float*>(output_buffer1);
+    float* scores_ptr = reinterpret_cast<float*>(output_buffer2);
+    
+    for (size_t i = 0; i < num_boxes; ++i)
+    {
+        if (*(scores_ptr+i)>score_thres){
+            int x1 = (int)*(boxes_ptr+4*i);
+            int y1 = (int)*(boxes_ptr+4*i+1);
+            int x2 = (int)*(boxes_ptr+4*i+2);
+            int y2 = (int)*(boxes_ptr+4*i+3);
+            std::string temp_score = std::to_string(*(scores_ptr+i));
+            size_t dot = temp_score.find(".");
+            cv::putText(resized_image,
+                        label_mapping[*(labels_ptr+i)] + " : "+ temp_score.replace(temp_score.begin()+dot+3,temp_score.end(),""),
+                        cv::Point(x1,y1+25),
+                        cv::FONT_HERSHEY_SIMPLEX,
+                        1,
+                        cv::Scalar(0,0,255)
+                        );
+            cv::rectangle(resized_image,cv::Rect(x1,y1,x2-x1,y2-y1),cv::Scalar(0,0,255));
 
+        }
+    }
+    std::string temp = file_name.replace(file_name.end()-4,file_name.end(),"_output_test.jpg");
+    
+    cv::String cv_str_temp = cv::String(temp);
+    // cv::imwrite(file_name.replace(file_name.end()-4,file_name.end(),"_output.jpg"),resized_image);
+    cv::imwrite(cv_str_temp,resized_image);
+    // cv::ImwriteFlags;
+
+    // stbi_write_jpg(file_name.replace(file_name.end()-4,file_name.end(),"_output.jpg").c_str(),image_w_resized,image_h_resized,image_comp_orig,output_buffer,80);
 
     return 0;
 }

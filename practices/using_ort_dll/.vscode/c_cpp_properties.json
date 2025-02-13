@@ -4,7 +4,20 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "C:\\Users\\kwoncy\\dev\\stb"
+                "C:\\Users\\kwoncy\\dev\\stb",
+                "C:\\Users\\kwoncy\\dev\\onnxruntime\\include\\onnxruntime\\core\\session",
+                "C:\\Users\\kwoncy\\dev\\onnxruntime\\include\\onnxruntime\\core\\providers\\dml",
+                // "C:\\Users\\kwoncy\\dev\\opencv-mobile-4.10.0\\modules\\core\\include",
+                // "C:\\Users\\kwoncy\\dev\\opencv-mobile-4.10.0\\modules\\highgui\\include",
+                // "C:\\Users\\kwoncy\\dev\\opencv-mobile-4.10.0\\modules\\imgproc\\include",
+                // "C:\\Users\\kwoncy\\dev\\opencv-mobile-4.10.0\\build"
+                "C:\\Users\\kwoncy\\dev\\opencv\\build",
+                "C:\\Users\\kwoncy\\dev\\opencv\\include",
+                "C:\\Users\\kwoncy\\dev\\opencv\\modules\\core\\include",
+                "C:\\Users\\kwoncy\\dev\\opencv\\modules\\highgui\\include",
+                "C:\\Users\\kwoncy\\dev\\opencv\\modules\\imgproc\\include",
+                "C:\\Users\\kwoncy\\dev\\opencv\\modules\\imgcodecs\\include",
+                "C:\\Users\\kwoncy\\dev\\opencv\\modules\\videoio\\include"
             ],
             "defines": [
                 "_DEBUG",

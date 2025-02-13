@@ -2,9 +2,17 @@
 *.lib
 *.pdb
 *.ilk
+*.exp
 *.exe
 *.obj
 *.tflite
 *.onnx
 
+*_test.py
 *_test.png
+*_test.jpg
+
+binary_*
+*.ninja*
+CMakeFiles
+*.cmake
