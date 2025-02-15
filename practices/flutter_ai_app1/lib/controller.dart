@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:ffi';
+import 'package:ffi/ffi.dart';
+import 'dart:io' show Platform, Directory;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'model.dart';
-import 'dart:io' show Platform, Directory;
 import 'package:path/path.dart' as path;
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
@@ -214,16 +216,19 @@ class ImageEnlightAIController extends GetxController {
     imageEnlightAI.setModelPath(modelPath);
     if (imageEnlightAI.isSharedLibLoaded) {
       sharedLibLoadCheck.value = true;
+      sharedLibLoadCheck.refresh();
     }
   }
 
   bool loadAILibrary() {
     if (imageEnlightAI.isSharedLibLoaded) {
       sharedLibLoadCheck.value = true;
+      sharedLibLoadCheck.refresh();
       return true;
     } else {
       imageEnlightAI.loadLibrary(sharedLibPath);
       sharedLibLoadCheck.value = imageEnlightAI.isSharedLibLoaded;
+      sharedLibLoadCheck.refresh();
       return imageEnlightAI.isSharedLibLoaded;
     }
   }
@@ -237,6 +242,7 @@ class ImageEnlightAIController extends GetxController {
     } else {
       if (files != null && files.first.bytes != null) {
         imageBytes.value = files.first.bytes!;
+        imageBytes.refresh();
         // print("imageBytes set.");
         return true;
       }
@@ -250,12 +256,20 @@ class ImageEnlightAIController extends GetxController {
     img.Image? tempImg = img.decodeImage(imageBytes.value);
     // img.Image? tempImg = img.decodeJpg(imageBytes.value);
     // img.Image? tempImg = img.Image.fromBytes(width: width, height: height, bytes: bytes);
-
     if (tempImg == null) return;
-    img.Image resizedTempImg = img.copyResize(tempImg,
-        width: 512, height: 512, interpolation: img.Interpolation.cubic);
 
-    int tempMemorySize = 512 * 512 * 3 * sizeOf<UnsignedChar>(); // 786432
+    int origImgWidth = tempImg.width;
+    int origImgHeight = tempImg.height;
+
+    img.Image resizedTempImg = img.copyResize(tempImg,
+        width: imageEnlightAI.w,
+        height: imageEnlightAI.h,
+        interpolation: img.Interpolation.cubic);
+
+    int tempMemorySize = imageEnlightAI.w *
+        imageEnlightAI.h *
+        imageEnlightAI.c *
+        sizeOf<UnsignedChar>(); // 786432
     // var byteData = resizedTempImg.data!.buffer.asByteData();
     Pointer<UnsignedChar> tempMemory =
         malloc.allocate<UnsignedChar>(tempMemorySize);
@@ -263,17 +277,36 @@ class ImageEnlightAIController extends GetxController {
         .cast<Uint8>()
         .asTypedList(tempMemorySize)
         .setAll(0, resizedTempImg.buffer.asUint8List());
-    myAI.aiEnhanceImage(tempMemory);
+
+    bool enlightResult = imageEnlightAI.aiEnhanceImage(tempMemory);
+    if (!enlightResult) {
+      debugPrint(imageEnlightAI.lastError);
+      return;
+    }
     var tempImage = img.Image.fromBytes(
-        width: 512,
-        height: 512,
-        bytes: tempMemory.cast<Uint8>().asTypedList(512 * 512 * 3).buffer);
+        width: imageEnlightAI.w,
+        height: imageEnlightAI.h,
+        bytes: tempMemory
+            .cast<Uint8>()
+            .asTypedList(imageEnlightAI.w * imageEnlightAI.h * imageEnlightAI.c)
+            .buffer);
+
+    img.Image resizedToOriginalImage = img.copyResize(tempImage,
+        width: origImgWidth,
+        height: origImgHeight,
+        interpolation: img.Interpolation.cubic);
     // imageBytes.value = tempMemory.cast<Uint8>().asTypedList(tempMemorySize);
     // imageBytes.value = resizedTempImg.buffer.asUint8List();
     // imageBytes.value = img.JpegEncoder(quality: 100).encode(resizedTempImg);
     // imageFileName.contains(".jpg")
-    imageBytes.value = img.JpegEncoder(quality: 100)
-        .encode(img.copyCrop(tempImage, x: 0, y: 0, width: 512, height: 512));
+
+    imageBytes.value = img.JpegEncoder(quality: 100).encode(img.copyCrop(
+        resizedToOriginalImage,
+        x: 0,
+        y: 0,
+        width: origImgWidth,
+        height: origImgHeight));
+
     malloc.free(tempMemory);
   }
 }

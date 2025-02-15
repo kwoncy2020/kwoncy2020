@@ -86,11 +86,13 @@ class LowLightEnhanceAI extends AIuser {
   int c = 3;
   ffi.DynamicLibrary? dyLib;
   String _lastError = "";
-  String modelPath = "";
+  String _modelPath = "";
   // tflite_c(buffer, byteSize, model_name, num_threads, model_bits, is_model_qat);
 
+  String get lastError => _lastError;
+
   void setModelPath(String modelPath) {
-    modelPath = modelPath;
+    _modelPath = modelPath;
   }
 
   void loadLibrary(String sharedLibPath) {
@@ -109,16 +111,16 @@ class LowLightEnhanceAI extends AIuser {
     return;
   }
 
-  void aiEnhanceImage(ffi.Pointer<ffi.UnsignedChar> imgBufferPtr) {
+  bool aiEnhanceImage(ffi.Pointer<ffi.UnsignedChar> imgBufferPtr) {
     if (!isSharedLibLoaded) {
       _lastError =
           "from LowLightEnhanceAI::aiEnhanceImage : shared library hasn't been loaded.";
-      return;
+      return false;
     }
-    if (modelPath.isEmpty) {
+    if (_modelPath.isEmpty) {
       _lastError =
           "from LowLightEnhanceAI::aiEnhanceImage : model path is empty.";
-      return;
+      return false;
     }
     var funcPointer =
         dyLib?.lookup<ffi.NativeFunction<NativeFuncImageEnhance>>("tflite_c");
@@ -126,7 +128,7 @@ class LowLightEnhanceAI extends AIuser {
     var dartF = funcPointer!.asFunction<DartFuncImageEnhance>();
     dartF(
         imgBufferPtr,
-        modelPath.toNativeUtf8(),
+        _modelPath.toNativeUtf8(),
         /* byteSize */ 512 * 512 * 3,
         /* num_threads */ 4,
         /* model_bits */ 8,
@@ -135,6 +137,7 @@ class LowLightEnhanceAI extends AIuser {
         /* use_gpu */ false,
         /* use_npu */ false,
         /* time_check_loop */ 0);
+    return true;
   }
 }
 

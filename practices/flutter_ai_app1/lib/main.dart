@@ -56,22 +56,22 @@ class MyApp extends StatelessWidget {
                     onPressed: () {
                       imageEnlightAIController.loadImageFromFile();
                     },
-                    child: Text(
+                    child: const Text(
                       "load image",
                     ),
                   ),
                   ElevatedButton(
                       onPressed: () {
-                        // Todo : enlight image method;
+                        imageEnlightAIController.imageEnlight();
                       },
-                      child: Text("enhance light"))
+                      child: const Text("enhance light"))
                 ]),
-                if (imageBytes.value.isNotEmpty)
+                if (imageEnlightAIController.imageBytes.value.isNotEmpty)
                   Expanded(
                     child: SingleChildScrollView(
                       child: Container(
                           child: Image.memory(
-                        imageBytes.value,
+                        imageEnlightAIController.imageBytes.value,
                       )),
                     ),
                   ),
