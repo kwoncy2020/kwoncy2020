@@ -3,12 +3,13 @@ import 'dart:ffi';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_ai_app1/controller.dart';
 import 'model.dart';
 import 'package:get/get.dart';
 import 'package:file_picker/file_picker.dart';
 // import 'dart:async';
 import 'dart:typed_data';
-import 'package:image/image.dart' as img;
+
 import 'package:ffi/ffi.dart';
 import 'views/chat_page.dart';
 
@@ -20,13 +21,7 @@ void main() {
 //  Todo : Seperate remained code to model and controller.
 class MyApp extends StatelessWidget {
   MyApp({super.key});
-  var myAI = LowLightEnhanceAI(
-      modelName: "image_enhanced_out_okv3_f_int_q_uint8.tflite",
-      inferDevice: "cpu",
-      numBits: 8,
-      numThreads: 4);
-  RxBool loadCheck = false.obs;
-  var imageBytes = Uint8List(0).obs;
+  var imageEnlightAIController = Get.put(ImageEnlightAIController());
   String imageFileName = "";
 
   // This widget is the root of your application.
@@ -41,41 +36,25 @@ class MyApp extends StatelessWidget {
                 ElevatedButton(
                   // onPressed: () => Get.to(() => MyChatView()),
                   onPressed: () => Get.to(() => MyChatViewSTF()),
-                  child: Text("chatAI"),
+                  child: const Text("chatAI"),
                 ),
                 Text(
-                  loadCheck.value == true ? "loaded" : "not loaded",
+                  imageEnlightAIController.sharedLibLoadCheck.value == true
+                      ? "loaded"
+                      : "not loaded",
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    myAI.loadLibrary();
-                    if (myAI.dyLib?.providesSymbol("tflite_c") == true)
-                      loadCheck.value = true;
-                    else
-                      loadCheck.value = false;
+                    imageEnlightAIController.loadAILibrary();
                   },
-                  child: Text(
+                  child: const Text(
                     "load dll",
                   ),
                 ),
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   ElevatedButton(
-                    onPressed: () async {
-                      var result = await FilePicker.platform.pickFiles(
-                        type: FileType.image,
-                        allowedExtensions: ['jpg', 'png'],
-                        withData: true,
-                      );
-
-                      if (result != null && result.files.isNotEmpty) {
-                        imageFileName = result.files.first.name;
-                        debugPrint(imageFileName);
-                      }
-                      List<PlatformFile>? files = result?.files;
-                      if (files != null && files.first.bytes != null) {
-                        imageBytes.value = files.first.bytes!;
-                        print("imageBytes set.");
-                      }
+                    onPressed: () {
+                      imageEnlightAIController.loadImageFromFile();
                     },
                     child: Text(
                       "load image",
@@ -83,43 +62,7 @@ class MyApp extends StatelessWidget {
                   ),
                   ElevatedButton(
                       onPressed: () {
-                        if (imageBytes.value.isEmpty) return;
-
-                        img.Image? tempImg = img.decodeImage(imageBytes.value);
-                        // img.Image? tempImg = img.decodeJpg(imageBytes.value);
-                        // img.Image? tempImg = img.Image.fromBytes(width: width, height: height, bytes: bytes);
-
-                        if (tempImg == null) return;
-                        img.Image resizedTempImg = img.copyResize(tempImg,
-                            width: 512,
-                            height: 512,
-                            interpolation: img.Interpolation.cubic);
-
-                        int tempMemorySize =
-                            512 * 512 * 3 * sizeOf<UnsignedChar>(); // 786432
-                        // var byteData = resizedTempImg.data!.buffer.asByteData();
-                        Pointer<UnsignedChar> tempMemory =
-                            malloc.allocate<UnsignedChar>(tempMemorySize);
-                        tempMemory
-                            .cast<Uint8>()
-                            .asTypedList(tempMemorySize)
-                            .setAll(0, resizedTempImg.buffer.asUint8List());
-                        myAI.aiEnhanceImage(tempMemory);
-                        var tempImage = img.Image.fromBytes(
-                            width: 512,
-                            height: 512,
-                            bytes: tempMemory
-                                .cast<Uint8>()
-                                .asTypedList(512 * 512 * 3)
-                                .buffer);
-                        // imageBytes.value = tempMemory.cast<Uint8>().asTypedList(tempMemorySize);
-                        // imageBytes.value = resizedTempImg.buffer.asUint8List();
-                        // imageBytes.value = img.JpegEncoder(quality: 100).encode(resizedTempImg);
-                        // imageFileName.contains(".jpg")
-                        imageBytes.value = img.JpegEncoder(quality: 100).encode(
-                            img.copyCrop(tempImage,
-                                x: 0, y: 0, width: 512, height: 512));
-                        malloc.free(tempMemory);
+                        // Todo : enlight image method;
                       },
                       child: Text("enhance light"))
                 ]),

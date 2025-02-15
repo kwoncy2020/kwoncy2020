@@ -5,6 +5,9 @@ import 'package:get/get.dart';
 import 'model.dart';
 import 'dart:io' show Platform, Directory;
 import 'package:path/path.dart' as path;
+import 'dart:typed_data';
+import 'package:file_picker/file_picker.dart';
+import 'package:image/image.dart' as img;
 
 class ChatAIController extends GetxController {
   var chatAI = ChatAI();
@@ -190,7 +193,106 @@ class ChatAIORTController extends GetxController {
 }
 
 class ImageEnlightAIController extends GetxController {
-  var imageEnlightAI = LowLightEnhanceAI();
+  var imageEnlightAI = LowLightEnhanceAI(
+      modelName: "image_enhanced_out_okv3_f_int_q_uint8.tflite",
+      inferDevice: "cpu",
+      numBits: 8,
+      numThreads: 4);
+  String sharedLibPath = "flutter_my_ai.dll";
+  String modelPath = path.join(Directory.current.path, "build",
+      "flutter_assets", "image_enhanced_out_okv3_f_int_q_uint8.tflite");
+
+  RxBool sharedLibLoadCheck = false.obs;
+  var imageBytes = Uint8List(0).obs;
+
+  var filePickerController = FilePickerContorller();
+
+  @override
+  void onInit() {
+    super.onInit();
+    imageEnlightAI.loadLibrary(sharedLibPath);
+    imageEnlightAI.setModelPath(modelPath);
+    if (imageEnlightAI.isSharedLibLoaded) {
+      sharedLibLoadCheck.value = true;
+    }
+  }
+
+  bool loadAILibrary() {
+    if (imageEnlightAI.isSharedLibLoaded) {
+      sharedLibLoadCheck.value = true;
+      return true;
+    } else {
+      imageEnlightAI.loadLibrary(sharedLibPath);
+      sharedLibLoadCheck.value = imageEnlightAI.isSharedLibLoaded;
+      return imageEnlightAI.isSharedLibLoaded;
+    }
+  }
+
+  Future<bool?> loadImageFromFile() async {
+    var files = await filePickerController.selectFiles();
+
+    if (files == null) {
+      // imageBytes.value.clear();
+      return false;
+    } else {
+      if (files != null && files.first.bytes != null) {
+        imageBytes.value = files.first.bytes!;
+        // print("imageBytes set.");
+        return true;
+      }
+    }
+    return null;
+  }
+
+  void imageEnlight() {
+    if (imageBytes.value.isEmpty) return;
+
+    img.Image? tempImg = img.decodeImage(imageBytes.value);
+    // img.Image? tempImg = img.decodeJpg(imageBytes.value);
+    // img.Image? tempImg = img.Image.fromBytes(width: width, height: height, bytes: bytes);
+
+    if (tempImg == null) return;
+    img.Image resizedTempImg = img.copyResize(tempImg,
+        width: 512, height: 512, interpolation: img.Interpolation.cubic);
+
+    int tempMemorySize = 512 * 512 * 3 * sizeOf<UnsignedChar>(); // 786432
+    // var byteData = resizedTempImg.data!.buffer.asByteData();
+    Pointer<UnsignedChar> tempMemory =
+        malloc.allocate<UnsignedChar>(tempMemorySize);
+    tempMemory
+        .cast<Uint8>()
+        .asTypedList(tempMemorySize)
+        .setAll(0, resizedTempImg.buffer.asUint8List());
+    myAI.aiEnhanceImage(tempMemory);
+    var tempImage = img.Image.fromBytes(
+        width: 512,
+        height: 512,
+        bytes: tempMemory.cast<Uint8>().asTypedList(512 * 512 * 3).buffer);
+    // imageBytes.value = tempMemory.cast<Uint8>().asTypedList(tempMemorySize);
+    // imageBytes.value = resizedTempImg.buffer.asUint8List();
+    // imageBytes.value = img.JpegEncoder(quality: 100).encode(resizedTempImg);
+    // imageFileName.contains(".jpg")
+    imageBytes.value = img.JpegEncoder(quality: 100)
+        .encode(img.copyCrop(tempImage, x: 0, y: 0, width: 512, height: 512));
+    malloc.free(tempMemory);
+  }
 }
 
-class FilePickerContorller extends GetxController {}
+class FilePickerContorller extends GetxController {
+  var selectedFirstFile = "";
+
+  Future<List<PlatformFile>?> selectFiles() async {
+    var result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      allowedExtensions: ['jpg', 'png'],
+      withData: true,
+    );
+
+    if (result != null && result.files.isNotEmpty) {
+      selectedFirstFile = result.files.first.name;
+      debugPrint(selectedFirstFile);
+    }
+    List<PlatformFile>? files = result?.files;
+    return files;
+  }
+}

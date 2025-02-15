@@ -1,6 +1,7 @@
 import 'dart:ffi' as ffi;
 import 'dart:io' show Platform, Directory;
 import 'dart:io';
+import 'dart:ui';
 import 'package:ffi/ffi.dart';
 import 'package:path/path.dart' as path;
 import 'package:llama_cpp_dart/llama_cpp_dart.dart';
@@ -84,18 +85,22 @@ class LowLightEnhanceAI extends AIuser {
   int h = 512;
   int c = 3;
   ffi.DynamicLibrary? dyLib;
-  //
+  String _lastError = "";
+  String modelPath = "";
   // tflite_c(buffer, byteSize, model_name, num_threads, model_bits, is_model_qat);
 
-  void loadLibrary() {
+  void setModelPath(String modelPath) {
+    modelPath = modelPath;
+  }
+
+  void loadLibrary(String sharedLibPath) {
     // var dllPath = path.join(Directory.current.path,"lib","using_tfl_c_shared.dll");
     // var dllPath = path.join(Directory.current.path, "build", "native_assets",
     //     "windows", "tensorflowlite_c", "flutter_my_ai.dll");
-    var dllPath = "flutter_my_ai.dll";
-
-    dyLib = ffi.DynamicLibrary.open(dllPath);
+    dyLib = ffi.DynamicLibrary.open(sharedLibPath);
     if (dyLib?.providesSymbol("tflite_c") == false) {
-      print("dll load fail");
+      _lastError =
+          "from LowLightEnhanceAI::loadLibrary : load shared library failed.";
       isSharedLibLoaded = false;
       return;
     }
@@ -105,8 +110,14 @@ class LowLightEnhanceAI extends AIuser {
   }
 
   void aiEnhanceImage(ffi.Pointer<ffi.UnsignedChar> imgBufferPtr) {
-    if (!this.isSharedLibLoaded) {
-      print("Dll not loaded");
+    if (!isSharedLibLoaded) {
+      _lastError =
+          "from LowLightEnhanceAI::aiEnhanceImage : shared library hasn't been loaded.";
+      return;
+    }
+    if (modelPath.isEmpty) {
+      _lastError =
+          "from LowLightEnhanceAI::aiEnhanceImage : model path is empty.";
       return;
     }
     var funcPointer =
@@ -115,8 +126,7 @@ class LowLightEnhanceAI extends AIuser {
     var dartF = funcPointer!.asFunction<DartFuncImageEnhance>();
     dartF(
         imgBufferPtr,
-        "C:\\Users\\kwoncy\\Documents\\dev\\git_upload\\flutter_ai_app\\flutter_using_dll\\flutter_using_dll\\build\\native_assets\\windows\\zdce++enhanced_out_okv3_f_int_q_uint8.tflite"
-            .toNativeUtf8(),
+        modelPath.toNativeUtf8(),
         /* byteSize */ 512 * 512 * 3,
         /* num_threads */ 4,
         /* model_bits */ 8,
