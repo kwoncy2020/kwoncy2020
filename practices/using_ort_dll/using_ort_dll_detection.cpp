@@ -35,6 +35,8 @@
 #include <vector>
 #include <format>
 #include "using_ort_dll_detection_label_mapping.h"
+#include <source_location>
+
 
 bool CheckStatus(const OrtApi* g_ort, OrtStatus* status) {
   if (status != nullptr) {
@@ -46,6 +48,210 @@ bool CheckStatus(const OrtApi* g_ort, OrtStatus* status) {
   return true;
 }
 
+std::string makeLastError(std::string_view message, const std::source_location& location=std::source_location::current()){
+    std::string ret_{location.function_name()};
+    ret_ = std::format("{} : {}", ret_, message);
+    return std::move(ret_);
+}
+
+enum EXECUTION_PROVIDER{
+    CPU,
+    GPU,
+    NPU,
+    DML,
+    XNNPACK
+};
+
+class ImageDetectionAI{
+    ImageDetectionAI():g_ort(OrtGetApiBase()->GetApi(ORT_API_VERSION)){
+        model_h = 640;
+        model_w = 640;
+        intra_op_num_threads=4;
+        infer_time_check_loop=1;
+        score_thres = 0.5;
+        _execution_provider=EXECUTION_PROVIDER::CPU;
+    };
+    int model_h;
+    int model_w;
+    
+
+    int intra_op_num_threads;
+    int infer_time_check_loop;
+    float score_thres = 0.5;
+    std::string file_name = "the-lucky-neko-rplhB9mYF48-unsplash.jpg";
+    std::wstring model_path = L"my_modified_rtdetector.onnx";
+    cv::Mat resizedImage;
+
+    bool load_model(const char* model_path);
+    bool inference_from_file(const char* file_path);
+    bool inference_from_bytes(unsigned char* data, int length);
+    bool set_execution_provider(const char* provider);
+    const char* get_last_error();
+
+    bool is_model_loaded=false;
+    private:
+    const OrtApi* g_ort;
+    int _execution_provider;
+    std::string _last_error="";
+
+};
+
+bool ImageDetectionAI::set_execution_provider(const char* provider){
+    if (provider == "cpu"){
+        _execution_provider = EXECUTION_PROVIDER::CPU;
+        return true;
+    }
+    if (provider == "gpu"){
+        _execution_provider = EXECUTION_PROVIDER::GPU;
+        return true;
+    }
+    if (provider == "npu"){
+        _execution_provider = EXECUTION_PROVIDER::NPU;
+        return true;
+    }
+    if (provider == "xnnpack"){
+        _execution_provider = EXECUTION_PROVIDER::XNNPACK;
+        return true;
+    }
+    
+    _last_error = makeLastError("provider setting failed. provider should be (cpu|gpu|dml|npu|xnnpack)");
+    return false;
+}
+
+const char* ImageDetectionAI::get_last_error(){
+    return _last_error.c_str();
+}
+
+bool ImageDetectionAI::load_model(const char* model_path){
+    is_model_loaded=false;
+    try{
+        if(g_ort==nullptr){
+            _last_error=makeLastError("model ptr (g_ort) == nullptr");
+            return false;
+        }
+        OrtEnv* env;
+        CheckStatus(g_ort, g_ort->CreateEnv(ORT_LOGGING_LEVEL_WARNING, "test", &env));
+        OrtSessionOptions* session_options;
+        CheckStatus(g_ort, g_ort->CreateSessionOptions(&session_options));
+        CheckStatus(g_ort, g_ort->SetIntraOpNumThreads(session_options,intra_op_num_threads));
+
+        switch(_execution_provider){
+            case EXECUTION_PROVIDER::XNNPACK:
+                {
+                std::vector<const char*> option_keys{"intra_op_num_threads"};
+                auto num_thread_str = std::to_string(intra_op_num_threads);
+                std::vector<const char*> option_values{num_thread_str.c_str()};
+                CheckStatus(g_ort,g_ort->SessionOptionsAppendExecutionProvider(session_options,"XNNPACK",option_keys.data(),option_values.data(),1));
+                break;
+                }
+            case EXECUTION_PROVIDER::DML:
+                OrtSessionOptionsAppendExecutionProvider_DML(session_options,0);
+                CheckStatus(g_ort,g_ort->DisableMemPattern(session_options));
+                CheckStatus(g_ort,g_ort->SetSessionExecutionMode(session_options, ExecutionMode::ORT_SEQUENTIAL));
+                break;
+            
+        }
+
+        std::vector<wchar_t> vec;
+        size_t len = strlen(model_path);
+        vec.resize(len+1);
+        mbstowcs(&vec[0],model_path,len);
+        const wchar_t* w_model_path = &vec[0];
+        
+        OrtSession* session;
+        CheckStatus(g_ort,g_ort->CreateSession(env, w_model_path, session_options, &session));
+
+        OrtAllocator* allocator;
+        CheckStatus(g_ort, g_ort->GetAllocatorWithDefaultOptions(&allocator));
+        size_t num_input_nodes;
+        CheckStatus(g_ort,g_ort->SessionGetInputCount(session, &num_input_nodes));
+
+        std::vector<const char*> input_node_names;
+        std::vector<std::vector<int64_t>> input_node_dims;
+        std::vector<ONNXTensorElementDataType> input_types;
+        std::vector<OrtValue*> input_tensors;
+        
+        input_node_names.resize(num_input_nodes);
+        input_node_dims.resize(num_input_nodes);
+        input_types.resize(num_input_nodes);
+        input_tensors.resize(num_input_nodes);
+
+        for (size_t i = 0; i < num_input_nodes; ++i)
+        {
+            char* input_name;
+            CheckStatus(g_ort, g_ort->SessionGetInputName(session, i, allocator, &input_name));
+            input_node_names[i] = input_name;
+
+            OrtTypeInfo* type_info;
+            CheckStatus(g_ort, g_ort->SessionGetInputTypeInfo(session,i,&type_info));
+            const OrtTensorTypeAndShapeInfo* tensor_info;
+            CheckStatus(g_ort, g_ort->CastTypeInfoToTensorInfo(type_info, &tensor_info));
+            ONNXTensorElementDataType type;
+            CheckStatus(g_ort,g_ort->GetTensorElementType(tensor_info, &type));
+            input_types[i]=type;
+
+            size_t num_dims;
+            CheckStatus(g_ort,g_ort->GetDimensionsCount(tensor_info, &num_dims));
+            input_node_dims[i].resize(num_dims);
+            CheckStatus(g_ort,g_ort->GetDimensions(tensor_info, input_node_dims[i].data(), num_dims));
+            if (type_info) g_ort->ReleaseTypeInfo(type_info);
+        }
+        
+        size_t num_output_nodes;
+        std::vector<const char*> output_node_names;
+        std::vector<std::vector<int64_t>> output_node_dims;
+        std::vector<OrtValue*> output_tensors;
+        CheckStatus(g_ort,g_ort->SessionGetOutputCount(session, &num_output_nodes));
+        
+        output_node_names.resize(num_output_nodes);
+        output_node_dims.resize(num_output_nodes);
+        output_tensors.resize(num_output_nodes);
+
+        for (size_t i = 0; i < num_output_nodes; ++i)
+        {
+            char* output_name;
+            CheckStatus(g_ort,g_ort->SessionGetOutputName(session,i,allocator,&output_name));
+            output_node_names[i] = output_name;
+
+            OrtTypeInfo* type_info;
+            CheckStatus(g_ort,g_ort->SessionGetOutputTypeInfo(session,i,&type_info));
+            const OrtTensorTypeAndShapeInfo* tensor_info;
+            CheckStatus(g_ort,g_ort->CastTypeInfoToTensorInfo(type_info,&tensor_info));
+
+            size_t num_dims;
+            CheckStatus(g_ort,g_ort->GetDimensionsCount(tensor_info, &num_dims));
+            output_node_dims[i].resize(num_dims);
+            CheckStatus(g_ort,g_ort->GetDimensions(tensor_info, (int64_t*)output_node_dims[i].data(),num_dims));
+
+            if(type_info) g_ort->ReleaseTypeInfo(type_info);
+        }
+
+    }catch(std::exception &e){
+        _last_error=makeLastError(std::format("exception occured e : {}", e.what()));
+    }
+
+    is_model_loaded=true;
+    return true;
+}
+
+bool ImageDetectionAI::inference_from_file(const char* file_path){
+    // inference_from_bytes(data, length);
+}
+
+bool ImageDetectionAI::inference_from_bytes(unsigned char* data, int length){
+    OrtMemoryInfo* memory_info;
+    size_t input_data_size = 1*model_h*model_w*3;
+    const size_t num_elements = 1*model_h*model_w*3;
+
+    CheckStatus(g_ort, g_ort->CreateCpuMemoryInfo(OrtArenaAllocator, OrtMemTypeDefault, &memory_info));
+    size_t input_data_length = input_data_size * sizeof(uint8_t);
+    CheckStatus(g_ort,g_ort->CreateTensorWithDataAsOrtValue(memory_info, reinterpret_cast<void*>(image_data_resized), input_data_length,
+                            input_node_dims[0].data(), input_node_dims[0].size(), input_types[0], &input_tensors[0]));
+    std::vector<int64_t> input1{model_h,model_w};
+    CheckStatus(g_ort,g_ort->CreateTensorWithDataAsOrtValue(memory_info,reinterpret_cast<void *>(input1.data()),input1.size()*sizeof(int64_t),input_node_dims[1].data(),input_node_dims[1].size(),input_types[1],&input_tensors[1]));
+
+    g_ort->ReleaseMemoryInfo(memory_info);
+}
 
 int main(){
     bool use_xnn=false;
