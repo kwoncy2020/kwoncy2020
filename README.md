@@ -5,7 +5,7 @@ I'm looking for a job. If you have any information, please let me know I appreci
 Now I try to make my own app using recently developped AI models.
 My app should include various ai model such as small llm, object detection and Image Enhancement.
 
-You can see my journey through waves of errors on the above folder named error_history. In there, I solved monumental problem about building library.
+You can see my journey through waves of errors on the folder named error_history and recent practices in https://github.com/kwoncy2020/kwoncy2020 repo. In there, I solved monumental problem about building library. 
 
 Error history
 https://github.com/kwoncy2020/kwoncy2020/tree/main/error_history
