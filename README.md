@@ -7,6 +7,11 @@ My app should include various ai model such as small llm, object detection and I
 
 You can see my journey through waves of errors on the above folder named error_history. In there, I solved monumental problem about building library.
 
+Error history
+https://github.com/kwoncy2020/kwoncy2020/tree/main/error_history
+
+Recent practices
+https://github.com/kwoncy2020/kwoncy2020/tree/main/practices
 
 
 ## here's my project as a AI Engineer
