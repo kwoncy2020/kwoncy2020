@@ -8,6 +8,7 @@
 *.tflite
 *.onnx
 
+*_test.cpp
 *_test.py
 *_test.png
 *_test.jpg

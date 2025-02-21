@@ -1,0 +1,37 @@
+cmake_minimum_required(VERSION 3.20)
+
+project(my_detection_ai)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_BUILD_TYPE Release)
+
+set(onnx_includes C:/Users/kwoncy/dev/onnxruntime/include/onnxruntime/core/session
+                    C:/Users/kwoncy/dev/onnxruntime/include/onnxruntime/core/providers/dml
+)
+
+set(cv_includes C:/Users/kwoncy/dev/opencv/include
+                C:/Users/kwoncy/dev/opencv/build
+                C:/Users/kwoncy/dev/opencv/modules/core/include
+                C:/Users/kwoncy/dev/opencv/modules/highgui/include
+                C:/Users/kwoncy/dev/opencv/modules/imgproc/include
+                C:/Users/kwoncy/dev/opencv/modules/imgcodecs/include
+                C:/Users/kwoncy/dev/opencv/modules/videoio/include
+                C:/Users/kwoncy/dev/stb
+)
+
+add_library(my_detection_ai SHARED ${CMAKE_SOURCE_DIR}/using_ort_dll_detection_test.cpp
+                                    # ${CMAKE_SOURCE_DIR}/using_ort_dll_detection.cpp
+                                    ${CMAKE_SOURCE_DIR}/using_ort_dll_detection_test.h
+                                    )
+
+target_include_directories(my_detection_ai PUBLIC ${CMAKE_SOURCE_DIR}
+                                                ${onnx_includes}
+                                                ${cv_includes}
+                                                )
+target_link_directories(my_detection_ai 
+                                        PUBLIC ${CMAKE_SOURCE_DIR}
+                                        PUBLIC C:/Users/kwoncy/dev/opencv/build/lib
+)
+target_link_libraries(my_detection_ai onnxruntime DirectML opencv_core4120 opencv_highgui4120 opencv_imgproc4120 opencv_imgcodecs4120)
+
+add_executable(use_my_detection_ai ${CMAKE_SOURCE_DIR}/using_ort_dll_detection_test.cpp)
+target_link_libraries(use_my_detection_ai my_detection_ai)

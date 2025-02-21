@@ -28,15 +28,13 @@
 #include "stb_image_resize2.h"
 
 
-
-
 #include "onnxruntime_cxx_api.h"
 #include "dml_provider_factory.h"
 #include <vector>
 #include <format>
 #include "using_ort_dll_detection_label_mapping.h"
 #include <source_location>
-
+#include "using_ort_dll_detection.h"
 
 bool CheckStatus(const OrtApi* g_ort, OrtStatus* status) {
   if (status != nullptr) {
@@ -54,47 +52,21 @@ std::string makeLastError(std::string_view message, const std::source_location& 
     return std::move(ret_);
 }
 
-enum EXECUTION_PROVIDER{
-    CPU,
-    GPU,
-    NPU,
-    DML,
-    XNNPACK
-};
 
-class ImageDetectionAI{
-    ImageDetectionAI():g_ort(OrtGetApiBase()->GetApi(ORT_API_VERSION)){
+ImageDetectionAI::ImageDetectionAI():g_ort(OrtGetApiBase()->GetApi(ORT_API_VERSION)){
         model_h = 640;
         model_w = 640;
+        model_c = 3;
         intra_op_num_threads=4;
         infer_time_check_loop=1;
         score_thres = 0.5;
         _execution_provider=EXECUTION_PROVIDER::CPU;
     };
-    int model_h;
-    int model_w;
-    
 
-    int intra_op_num_threads;
-    int infer_time_check_loop;
-    float score_thres = 0.5;
-    std::string file_name = "the-lucky-neko-rplhB9mYF48-unsplash.jpg";
-    std::wstring model_path = L"my_modified_rtdetector.onnx";
-    cv::Mat resizedImage;
 
-    bool load_model(const char* model_path);
-    bool inference_from_file(const char* file_path);
-    bool inference_from_bytes(unsigned char* data, int length);
-    bool set_execution_provider(const char* provider);
-    const char* get_last_error();
-
-    bool is_model_loaded=false;
-    private:
-    const OrtApi* g_ort;
-    int _execution_provider;
-    std::string _last_error="";
-
-};
+bool ImageDetectionAI::is_model_loaded(){
+    return _is_model_loaded;
+}
 
 bool ImageDetectionAI::set_execution_provider(const char* provider){
     if (provider == "cpu"){
@@ -123,15 +95,15 @@ const char* ImageDetectionAI::get_last_error(){
 }
 
 bool ImageDetectionAI::load_model(const char* model_path){
-    is_model_loaded=false;
+    _is_model_loaded=false;
+    _model_path = std::string(model_path);
+
     try{
         if(g_ort==nullptr){
             _last_error=makeLastError("model ptr (g_ort) == nullptr");
             return false;
         }
-        OrtEnv* env;
         CheckStatus(g_ort, g_ort->CreateEnv(ORT_LOGGING_LEVEL_WARNING, "test", &env));
-        OrtSessionOptions* session_options;
         CheckStatus(g_ort, g_ort->CreateSessionOptions(&session_options));
         CheckStatus(g_ort, g_ort->SetIntraOpNumThreads(session_options,intra_op_num_threads));
 
@@ -158,19 +130,10 @@ bool ImageDetectionAI::load_model(const char* model_path){
         mbstowcs(&vec[0],model_path,len);
         const wchar_t* w_model_path = &vec[0];
         
-        OrtSession* session;
         CheckStatus(g_ort,g_ort->CreateSession(env, w_model_path, session_options, &session));
-
-        OrtAllocator* allocator;
         CheckStatus(g_ort, g_ort->GetAllocatorWithDefaultOptions(&allocator));
-        size_t num_input_nodes;
         CheckStatus(g_ort,g_ort->SessionGetInputCount(session, &num_input_nodes));
 
-        std::vector<const char*> input_node_names;
-        std::vector<std::vector<int64_t>> input_node_dims;
-        std::vector<ONNXTensorElementDataType> input_types;
-        std::vector<OrtValue*> input_tensors;
-        
         input_node_names.resize(num_input_nodes);
         input_node_dims.resize(num_input_nodes);
         input_types.resize(num_input_nodes);
@@ -197,10 +160,7 @@ bool ImageDetectionAI::load_model(const char* model_path){
             if (type_info) g_ort->ReleaseTypeInfo(type_info);
         }
         
-        size_t num_output_nodes;
-        std::vector<const char*> output_node_names;
-        std::vector<std::vector<int64_t>> output_node_dims;
-        std::vector<OrtValue*> output_tensors;
+        
         CheckStatus(g_ort,g_ort->SessionGetOutputCount(session, &num_output_nodes));
         
         output_node_names.resize(num_output_nodes);
@@ -230,28 +190,172 @@ bool ImageDetectionAI::load_model(const char* model_path){
         _last_error=makeLastError(std::format("exception occured e : {}", e.what()));
     }
 
-    is_model_loaded=true;
+    _is_model_loaded=true;
     return true;
 }
 
 bool ImageDetectionAI::inference_from_file(const char* file_path){
-    // inference_from_bytes(data, length);
+    if (!_is_model_loaded){
+        _last_error = makeLastError("model hasn't been loaded.");
+        return false;
+    }
+    int image_w_orig, image_h_orig, image_comp_orig;
+    cv::Mat loaded_image = cv::imread(file_path,1);
+    image_w_orig = loaded_image.cols;
+    image_h_orig = loaded_image.rows;
+    image_comp_orig = loaded_image.dims;
+    unsigned char* image_data = loaded_image.data;
+    
+    int image_w_resized=model_w;
+    int image_h_resized=model_h;
+    
+    cv::Mat resized_image;
+    cv::resize(loaded_image,resized_image,cv::Size(model_w,model_h),0,0,cv::INTER_LANCZOS4);
+    unsigned char* image_data_resized = resized_image.data;
+    int image_c_resized = resized_image.channels();
+
+    int image_data_resized_length = image_w_resized * image_h_resized * image_c_resized * sizeof(uint8_t);
+
+    return inference_from_bytes(image_data_resized, image_data_resized_length);
 }
 
-bool ImageDetectionAI::inference_from_bytes(unsigned char* data, int length){
+bool ImageDetectionAI::inference_from_bytes(unsigned char* buffer_data, int data_length){
+    if (!_is_model_loaded){
+        _last_error = makeLastError("model hasn't been loaded.");
+        return false;
+    }
+
     OrtMemoryInfo* memory_info;
-    size_t input_data_size = 1*model_h*model_w*3;
-    const size_t num_elements = 1*model_h*model_w*3;
+    size_t input_data_size = 1*model_h*model_w*model_c;
+    const size_t num_elements = 1*model_h*model_w*model_c;
 
     CheckStatus(g_ort, g_ort->CreateCpuMemoryInfo(OrtArenaAllocator, OrtMemTypeDefault, &memory_info));
     size_t input_data_length = input_data_size * sizeof(uint8_t);
-    CheckStatus(g_ort,g_ort->CreateTensorWithDataAsOrtValue(memory_info, reinterpret_cast<void*>(image_data_resized), input_data_length,
+    if (input_data_length != data_length){
+        _last_error = makeLastError(std::format("data length miss match : data_length({}) and input_data_length({})",data_length, input_data_length));
+        return false;
+    }
+
+    CheckStatus(g_ort,g_ort->CreateTensorWithDataAsOrtValue(memory_info, reinterpret_cast<void*>(buffer_data), input_data_length,
                             input_node_dims[0].data(), input_node_dims[0].size(), input_types[0], &input_tensors[0]));
     std::vector<int64_t> input1{model_h,model_w};
     CheckStatus(g_ort,g_ort->CreateTensorWithDataAsOrtValue(memory_info,reinterpret_cast<void *>(input1.data()),input1.size()*sizeof(int64_t),input_node_dims[1].data(),input_node_dims[1].size(),input_types[1],&input_tensors[1]));
 
     g_ort->ReleaseMemoryInfo(memory_info);
+
+    CheckStatus(g_ort,g_ort->Run(session,nullptr,input_node_names.data(),(const OrtValue* const*)input_tensors.data(),
+                                    input_tensors.size(), output_node_names.data(), output_node_names.size(), output_tensors.data()));
+
+    return true;
 }
+
+bool ImageDetectionAI::get_detected_output_values(int* out_labels, float* out_boxes, float* out_scores, int* out_num_detected, int detect_limit=50){
+    try{
+        if (detect_limit>50 || detect_limit<0) detect_limit=50;
+        if (detect_limit > _detect_limit) detect_limit = _detect_limit;
+
+        memset(out_labels,0,50);
+        memset(out_boxes,0,50*4);
+        memset(out_scores,0,50);
+
+        void* output_buffer0;
+        void* output_buffer1;
+        void* output_buffer2;
+        size_t num_boxes = output_node_dims[2][1];
+        CheckStatus(g_ort,g_ort->GetTensorMutableData(output_tensors[0],&output_buffer0));
+        CheckStatus(g_ort,g_ort->GetTensorMutableData(output_tensors[1],&output_buffer1));
+        CheckStatus(g_ort,g_ort->GetTensorMutableData(output_tensors[2],&output_buffer2));
+        
+        int64_t* labels_ptr = reinterpret_cast<int64_t*>(output_buffer0);
+        float* boxes_ptr = reinterpret_cast<float*>(output_buffer1);
+        float* scores_ptr = reinterpret_cast<float*>(output_buffer2);
+        
+        if (num_boxes > detect_limit) num_boxes=detect_limit;
+        for (size_t i = 0; i < num_boxes; ++i)
+        {
+            *(out_labels+i) = *(labels_ptr+i);
+        }
+        memcpy(out_boxes,boxes_ptr,num_boxes*4);
+        memcpy(out_scores,scores_ptr,num_boxes);
+        *out_num_detected = num_boxes;
+
+    }catch(std::exception &e){
+        _last_error=makeLastError(std::format("exception occured - {}.",e.what()));
+    }
+    return true;
+}
+
+bool ImageDetectionAI::get_drawed_image_with_detected_output(unsigned char* out_image_data, int image_data_length, int num_detected, int* labels_ptr, float* boxes_ptr, float* scores_ptr){
+    try{
+
+        if (image_data_length != model_h*model_w*model_c){
+            _last_error = makeLastError(std::format("image_data_length value({}) is not match with model's h*w*c ({}), model_h({}), model_w({}), model_c({})", image_data_length, model_h*model_w*model_c, model_h, model_w, model_c));
+            return false;
+        }
+        
+        // int* labels = new int[num_detected];
+        // float* boxes = new float[num_detected*4];
+        // float* scores = new float[num_detected];
+
+        // cv::Mat(out_image_data,image_data_length);
+        cv::Mat detected_image(model_h,model_w,CV_8UC3, out_image_data);
+
+        for (size_t i = 0; i < num_detected; ++i)
+        {
+            if (*(scores_ptr+i)>score_thres){
+                int x1 = (int)*(boxes_ptr+4*i);
+                int y1 = (int)*(boxes_ptr+4*i+1);
+                int x2 = (int)*(boxes_ptr+4*i+2);
+                int y2 = (int)*(boxes_ptr+4*i+3);
+                std::string temp_score = std::to_string(*(scores_ptr+i));
+                size_t dot = temp_score.find(".");
+                cv::putText(detected_image,
+                            label_mapping[*(labels_ptr+i)] + " : "+ temp_score.replace(temp_score.begin()+dot+3,temp_score.end(),""),
+                            cv::Point(x1,y1+25),
+                            cv::FONT_HERSHEY_SIMPLEX,
+                            1,
+                            cv::Scalar(0,0,255)
+                            );
+                cv::rectangle(detected_image,cv::Rect(x1,y1,x2-x1,y2-y1),cv::Scalar(0,0,255));
+            }
+        }
+    }catch(std::exception &e){
+        _last_error=makeLastError(std::format("exception occured - {}.",e.what()));
+    }
+    return true;
+}
+
+bool ImageDetectionAI::get_detected_image(unsigned char* out_image_data, int image_data_length){
+    try{
+
+        if (image_data_length != model_h*model_w*model_c){
+            _last_error = makeLastError(std::format("image_data_length value({}) is not match with model's h*w*c ({}), model_h({}), model_w({}), model_c({})", image_data_length, model_h*model_w*model_c, model_h, model_w, model_c));
+            return false;
+        }
+        int detect_limit = _detect_limit;
+        int* out_labels = new int[detect_limit];
+        float* out_boxes = new float[detect_limit*4];
+        float* out_scores = new float[detect_limit];
+        int* out_num_detected= new int;
+
+        if (!get_detected_output_values(out_labels, out_boxes, out_scores, out_num_detected, detect_limit)){
+            _last_error = makeLastError("get_detected_output_values method failed.");
+            return false;
+        }
+
+        if (!get_drawed_image_with_detected_output(out_image_data,image_data_length,*out_num_detected,out_labels,out_boxes,out_scores)){
+            // last_error will be set in the function.
+            return false;
+        }
+
+    
+    }catch(std::exception &e){
+        _last_error=makeLastError(std::format("exception occured - {}.",e.what()));
+    }
+    return true;
+}
+
+
 
 int main(){
     bool use_xnn=false;

@@ -6,7 +6,7 @@
         "type": "cppvsdbg",
         "request": "launch",
         "program": "${fileDirname}\\${fileBasenameNoExtension}.exe",
-        "args": [],
+        "args": ["/std=c++20"],
         "stopAtEntry": false,
         "cwd": "${workspaceFolder}",
         "console": "internalConsole",
