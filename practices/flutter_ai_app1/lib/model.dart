@@ -59,6 +59,88 @@ typedef NativeFuncChatAIGenerateNext = ffi.Pointer<Utf8> Function(
 typedef DartFuncChatAIGenerateNext = ffi.Pointer<Utf8> Function(
     ffi.Pointer<ffi.Void> ptr);
 
+typedef NFDetectionAICreateDetectionAI = ffi.Pointer<ffi.Void> Function();
+typedef DFDetectionAICreateDetectionAI = ffi.Pointer<ffi.Void> Function();
+
+typedef NFDetectionAIDeleteDetectionAI = ffi.Void Function(
+    ffi.Pointer<ffi.Void> ptr);
+typedef DFDetectionAIDeleteDetectionAI = void Function(
+    ffi.Pointer<ffi.Void> ptr);
+
+typedef NFDetectionAILoadModel = ffi.Bool Function(
+    ffi.Pointer<ffi.Void> ptr, ffi.Pointer<Utf8> model_path);
+typedef DFDetectionAILoadModel = bool Function(
+    ffi.Pointer<ffi.Void> ptr, ffi.Pointer<Utf8> model_path);
+
+typedef NFDetectionAISetExecutionProvider = ffi.Bool Function(
+    ffi.Pointer<ffi.Void> ptr, ffi.Pointer<Utf8> execution_provider);
+typedef DFDetectionAISetExecutionProvider = bool Function(
+    ffi.Pointer<ffi.Void> ptr, ffi.Pointer<Utf8> execution_provider);
+
+typedef NFDetectionAIInferenceFromFile = ffi.Bool Function(
+    ffi.Pointer<ffi.Void> ptr, ffi.Pointer<Utf8> file_path);
+typedef DFDetectionAIInferenceFromFile = bool Function(
+    ffi.Pointer<ffi.Void> ptr, ffi.Pointer<Utf8> file_path);
+
+typedef NFDetectionAIInferenceFromBytes = ffi.Bool Function(
+    ffi.Pointer<ffi.Void> ptr,
+    ffi.Pointer<ffi.UnsignedChar> buffer_data,
+    ffi.Int32 length);
+typedef DFDetectionAIInferenceFromBytes = bool Function(
+    ffi.Pointer<ffi.Void> ptr,
+    ffi.Pointer<ffi.UnsignedChar> buffer_data,
+    int length);
+
+typedef NFDetectionAIGetDetectedOutputValue = ffi.Bool Function(
+    ffi.Pointer<ffi.Void> ptr,
+    ffi.Pointer<ffi.Int32> out_labels,
+    ffi.Pointer<ffi.Float> out_boxes,
+    ffi.Pointer<ffi.Float> out_scores,
+    ffi.Pointer<ffi.Int32> out_num_detected,
+    ffi.Int32 detect_limit); // detect_limit = 50 for this model
+typedef DFDetectionAIGetDetectedOutputValue = bool Function(
+    ffi.Pointer<ffi.Void> ptr,
+    ffi.Pointer<ffi.Int32> out_labels,
+    ffi.Pointer<ffi.Float> out_boxes,
+    ffi.Pointer<ffi.Float> out_scores,
+    ffi.Pointer<ffi.Int32> out_num_detected,
+    int detect_limit); // detect_limit = 50 for this model
+
+typedef NFDetectionAIGetDrawnImageWithDetectedOutput = ffi.Bool Function(
+    ffi.Pointer<ffi.Void> ptr,
+    ffi.Pointer<ffi.UnsignedChar> out_image,
+    ffi.Int32 image_data_length, // for this model, it must be 640 * 640 * 3
+    ffi.Int32 num_detected,
+    ffi.Pointer<ffi.Int32> labels,
+    ffi.Pointer<ffi.Float> boxes,
+    ffi.Pointer<ffi.Float> scores);
+typedef DFDetectionAIGetDrawnImageWithDetectedOutput = bool Function(
+    ffi.Pointer<ffi.Void> ptr,
+    ffi.Pointer<ffi.UnsignedChar> out_image,
+    int image_data_length, // for this model, it must be 640 * 640 * 3
+    int num_detected,
+    ffi.Pointer<ffi.Int32> labels,
+    ffi.Pointer<ffi.Float> boxes,
+    ffi.Pointer<ffi.Float> scores);
+
+typedef NFDetectionAIGetDetectedImage = ffi.Bool Function(
+    ffi.Pointer<ffi.Void> ptr,
+    ffi.Pointer<ffi.UnsignedChar> out_image,
+    ffi.Int32 image_data_length); // for this model, it must be 640 * 640 * 3
+typedef DFDetectionAIGetDetectedImage = bool Function(
+    ffi.Pointer<ffi.Void> ptr,
+    ffi.Pointer<ffi.UnsignedChar> out_image,
+    int image_data_length); // for this model, it must be 640 * 640 * 3
+
+typedef NFDetectionAIGetLastError = ffi.Pointer<Utf8> Function(
+    ffi.Pointer<ffi.Void> ptr);
+typedef DFDetectionAIGetLastError = ffi.Pointer<Utf8> Function(
+    ffi.Pointer<ffi.Void> ptr);
+
+typedef NFDetectionAIIsMoelLoaded = ffi.Bool Function(
+    ffi.Pointer<ffi.Void> ptr);
+typedef DFDetectionAIIsMoelLoaded = bool Function(ffi.Pointer<ffi.Void> ptr);
+
 class AIuser {
   AIuser(
       {this.modelName = "",
@@ -75,6 +157,7 @@ class AIuser {
   bool isSharedLibLoaded;
 }
 
+// Todo : change shared library for better perfomance. currently aiEnhanceImage method create model sesstion and set parameters every each of calls.
 class LowLightEnhanceAI extends AIuser {
   LowLightEnhanceAI(
       {super.modelName = "",
@@ -221,10 +304,16 @@ class ChatAIORT extends AIuser {
   ffi.DynamicLibrary? dyLib;
   bool isModelLoaded = false;
   String _lastError = "";
-  ffi.Pointer<ffi.Void> modelptr = ffi.nullptr;
+  ffi.Pointer<ffi.Void> modelPtr = ffi.nullptr;
 
   String get getLastError {
     return _lastError;
+  }
+
+  void dispose() {
+    if (modelPtr != ffi.nullptr) {
+      delete_chat_ai(modelPtr);
+    }
   }
 
   bool loadLibrary(String sharedLibPath) {
@@ -259,9 +348,9 @@ class ChatAIORT extends AIuser {
       return false;
     }
     ;
-    modelptr = create_chat_ai(
+    modelPtr = create_chat_ai(
         modelPath.toNativeUtf8(), executionProvider.toNativeUtf8());
-    if (modelptr == ffi.nullptr) {
+    if (modelPtr == ffi.nullptr) {
       isModelLoaded = false;
       _lastError =
           "from ChatAIORT::loadModel : load fail (received nullptr from native create_chat_ai function)";
@@ -336,7 +425,7 @@ class ChatAIORT extends AIuser {
       return "from ChatAIORT::generateWholeText : the model is not loaded.";
     }
 
-    return generate_text_from_chat_ai(modelptr, prompt.toNativeUtf8())
+    return generate_text_from_chat_ai(modelPtr, prompt.toNativeUtf8())
         .toDartString();
   }
 
@@ -349,20 +438,222 @@ class ChatAIORT extends AIuser {
       if (prompt.isEmpty) {
         yield "input your question.";
       } else {
-        bool res = set_prompt(modelptr, prompt.toNativeUtf8());
+        bool res = set_prompt(modelPtr, prompt.toNativeUtf8());
         if (!res) {
           _lastError =
               "from ChatAIORT::generateNextText : set_prompt method failed.";
           yield "from ChatAIORT::generateNextText : set_prompt method failed.";
         } else {
-          while (!is_done(modelptr)) {
+          while (!is_done(modelPtr)) {
             await Future.delayed(const Duration(milliseconds: 50));
-            ffi.Pointer<Utf8> c_text = generate_next(modelptr);
+            ffi.Pointer<Utf8> c_text = generate_next(modelPtr);
             String text = c_text.toDartString();
             yield text;
           }
         }
       }
     }
+  }
+}
+
+class ImageDetectionAI extends AIuser {
+  ImageDetectionAI(
+      {super.modelName = "",
+      super.numBits = 32,
+      super.numThreads = 4,
+      super.inferDevice = "cpu"});
+  int w = 640;
+  int h = 640;
+  int c = 3;
+  int _detect_limit = 50;
+  ffi.DynamicLibrary? dyLib;
+  bool isModelLoaded = false;
+  String _lastError = "";
+  ffi.Pointer<ffi.Void> modelPtr = ffi.nullptr;
+
+  String get lastError => _lastError;
+  int get detect_limit => _detect_limit;
+
+  void dispose() {
+    if (modelPtr != ffi.nullptr) {
+      delete_detection_ai(modelPtr);
+    }
+  }
+
+  bool loadLibrary(String sharedLibPath) {
+    try {
+      if (sharedLibPath.isEmpty) {
+        sharedLibPath = "my_detection_ai";
+        if (Platform.isWindows) sharedLibPath += ".dll";
+        if (Platform.isAndroid) sharedLibPath += ".so";
+      }
+
+      dyLib = ffi.DynamicLibrary.open(sharedLibPath);
+      if (dyLib?.providesSymbol("create_detection_ai") == false) {
+        _lastError =
+            "from ImageDetectionAI::loadLibrary : shared lib load fail";
+        isSharedLibLoaded = false;
+        return false;
+      }
+
+      isSharedLibLoaded = true;
+      isModelLoaded = true;
+      return true;
+    } catch (e) {
+      print(e);
+      _lastError = "$e";
+    }
+    return false;
+  }
+
+  bool loadModel(String modelPath, String executionProvider) {
+    if (!isSharedLibLoaded) {
+      _lastError =
+          "from ImageDetectionAI::loadModel : load fail - shared library hasn't been loaded.";
+      return false;
+    }
+    ;
+    modelPtr = create_detection_ai();
+    if (modelPtr == ffi.nullptr) {
+      isModelLoaded = false;
+      _lastError =
+          "from ImageDetectionAI::loadModel : load fail (received nullptr from native create_chat_ai function)";
+      return false;
+    } else {
+      isModelLoaded = true;
+      load_model(modelPtr, modelPath.toNativeUtf8());
+      set_execution_provider(modelPtr, executionProvider.toNativeUtf8());
+
+      return true;
+    }
+  }
+
+  ffi.Pointer<ffi.Void> create_detection_ai() {
+    if (!isSharedLibLoaded) {
+      _lastError =
+          "from ImageDetectionAI::create_chat_ai : shared lib not loaded";
+      return ffi.nullptr;
+    }
+
+    var funcPointer = dyLib!
+        .lookup<ffi.NativeFunction<NFDetectionAICreateDetectionAI>>(
+            "create_detection_ai");
+    var dartF = funcPointer.asFunction<DFDetectionAICreateDetectionAI>();
+
+    return dartF();
+  }
+
+  void delete_detection_ai(ffi.Pointer<ffi.Void> ptr) {
+    var funcPointer = dyLib!
+        .lookup<ffi.NativeFunction<NFDetectionAIDeleteDetectionAI>>(
+            "delete_detection_ai");
+    var dartF = funcPointer.asFunction<DFDetectionAIDeleteDetectionAI>();
+    dartF(ptr);
+  }
+
+  bool load_model(ffi.Pointer<ffi.Void> ptr, ffi.Pointer<Utf8> model_path) {
+    var funcPointer =
+        dyLib!.lookup<ffi.NativeFunction<NFDetectionAILoadModel>>("load_model");
+
+    var dartF = funcPointer.asFunction<DFDetectionAILoadModel>();
+    return dartF(ptr, model_path);
+  }
+
+  bool set_execution_provider(
+      ffi.Pointer<ffi.Void> ptr, ffi.Pointer<Utf8> provider) {
+    var funcPointer = dyLib!
+        .lookup<ffi.NativeFunction<NFDetectionAISetExecutionProvider>>(
+            "set_execution_provider");
+
+    var dartF = funcPointer.asFunction<DFDetectionAISetExecutionProvider>();
+    return dartF(ptr, provider);
+  }
+
+  bool inference_from_file(
+      ffi.Pointer<ffi.Void> ptr, ffi.Pointer<Utf8> file_path) {
+    var funcPointer = dyLib!
+        .lookup<ffi.NativeFunction<NFDetectionAIInferenceFromFile>>(
+            "inference_from_file");
+
+    var dartF = funcPointer.asFunction<DFDetectionAIInferenceFromFile>();
+    return dartF(ptr, file_path);
+  }
+
+  bool inference_from_bytes(ffi.Pointer<ffi.Void> ptr,
+      ffi.Pointer<ffi.UnsignedChar> buffer_data, int length) {
+    var funcPointer = dyLib!
+        .lookup<ffi.NativeFunction<NFDetectionAIInferenceFromBytes>>(
+            "inference_from_bytes");
+
+    var dartF = funcPointer.asFunction<DFDetectionAIInferenceFromBytes>();
+
+    return dartF(ptr, buffer_data, length);
+  }
+
+  bool get_detected_output_value(
+      ffi.Pointer<ffi.Void> ptr,
+      ffi.Pointer<ffi.Int32> out_labels,
+      ffi.Pointer<ffi.Float> out_boxes,
+      ffi.Pointer<ffi.Float> out_scores,
+      ffi.Pointer<ffi.Int32> out_num_detected,
+      int detect_limit) {
+    var funcPointer = dyLib!
+        .lookup<ffi.NativeFunction<NFDetectionAIGetDetectedOutputValue>>(
+            "get_detected_output_value");
+
+    var dartF = funcPointer.asFunction<DFDetectionAIGetDetectedOutputValue>();
+
+    return dartF(
+        ptr, out_labels, out_boxes, out_scores, out_num_detected, detect_limit);
+  }
+
+  bool get_drawn_image_with_detected_output(
+      ffi.Pointer<ffi.Void> ptr,
+      ffi.Pointer<ffi.UnsignedChar> out_image,
+      int image_data_length,
+      int num_detected,
+      ffi.Pointer<ffi.Int32> labels,
+      ffi.Pointer<ffi.Float> boxes,
+      ffi.Pointer<ffi.Float> scores) {
+    var funcPointer = dyLib!.lookup<
+            ffi.NativeFunction<NFDetectionAIGetDrawnImageWithDetectedOutput>>(
+        "get_drawn_image_with_detected_output");
+
+    var dartF =
+        funcPointer.asFunction<DFDetectionAIGetDrawnImageWithDetectedOutput>();
+
+    return dartF(
+        ptr, out_image, image_data_length, num_detected, labels, boxes, scores);
+  }
+
+  bool get_detected_image(ffi.Pointer<ffi.Void> ptr,
+      ffi.Pointer<ffi.UnsignedChar> out_image, int image_data_length) {
+    var funcPointer = dyLib!
+        .lookup<ffi.NativeFunction<NFDetectionAIGetDetectedImage>>(
+            "get_detected_image");
+
+    var dartF = funcPointer.asFunction<DFDetectionAIGetDetectedImage>();
+
+    return dartF(ptr, out_image, image_data_length);
+  }
+
+  ffi.Pointer<Utf8> get_last_error(ffi.Pointer<ffi.Void> ptr) {
+    var funcPointer = dyLib!
+        .lookup<ffi.NativeFunction<NFDetectionAIGetLastError>>(
+            "get_last_error");
+
+    var dartF = funcPointer.asFunction<DFDetectionAIGetLastError>();
+
+    return dartF(ptr);
+  }
+
+  bool is_model_loaded(ffi.Pointer<ffi.Void> ptr) {
+    var funcPointer = dyLib!
+        .lookup<ffi.NativeFunction<NFDetectionAIIsMoelLoaded>>(
+            "is_model_loaded");
+
+    var dartF = funcPointer.asFunction<DFDetectionAIIsMoelLoaded>();
+
+    return dartF(ptr);
   }
 }

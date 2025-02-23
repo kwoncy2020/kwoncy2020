@@ -200,7 +200,7 @@ class ImageEnlightAIController extends GetxController {
       inferDevice: "cpu",
       numBits: 8,
       numThreads: 4);
-  String sharedLibPath = "flutter_my_ai.dll";
+  String sharedLibPath = "";
   String modelPath = path.join(Directory.current.path, "build",
       "flutter_assets", "image_enhanced_out_okv3_f_int_q_uint8.tflite");
 
@@ -212,6 +212,10 @@ class ImageEnlightAIController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    sharedLibPath = "flutter_my_ai";
+    if (Platform.isWindows) sharedLibPath += ".dll";
+    if (Platform.isAndroid) sharedLibPath += ".so";
+
     imageEnlightAI.loadLibrary(sharedLibPath);
     imageEnlightAI.setModelPath(modelPath);
     if (imageEnlightAI.isSharedLibLoaded) {
@@ -309,6 +313,67 @@ class ImageEnlightAIController extends GetxController {
 
     malloc.free(tempMemory);
   }
+}
+
+class ImageDetectionAIController extends GetxController {
+  var imageDetectionAI = ImageDetectionAI(
+      modelName: "phi-3.5-mini",
+      numBits: 32,
+      numThreads: 4,
+      inferDevice: "cpu");
+
+  String sharedLibPath = "";
+  String modelPath = path.join(Directory.current.path, "build",
+      "flutter_assets", "my_modified_rtdetector.onnx");
+
+  RxBool sharedLibLoadCheck = false.obs;
+  late int detect_limit = imageDetectionAI.detect_limit;
+  var imageBytes = Uint8List(0).obs;
+  var out_num_detected = Int32().obs;
+  late var out_labels = Int32List(detect_limit).obs;
+  late var out_boxes = Float32List(detect_limit).obs;
+  late var out_scores = Float32List(detect_limit).obs;
+
+  var filePickerController = FilePickerContorller();
+
+  @override
+  void onInit() {
+    super.onInit();
+    sharedLibPath = "my_detection_ai";
+    if (Platform.isWindows) sharedLibPath += ".dll";
+    if (Platform.isAndroid) sharedLibPath += ".so";
+
+    imageDetectionAI.loadLibrary(sharedLibPath);
+    var provider = imageDetectionAI.inferDevice;
+    if (provider == "cpu") {
+      provider = "xnnpack";
+    }
+    imageDetectionAI.loadModel(modelPath, provider);
+
+    if (imageDetectionAI.isSharedLibLoaded) {
+      sharedLibLoadCheck.value = true;
+      sharedLibLoadCheck.refresh();
+    }
+  }
+
+  Future<bool?> loadImageFromFile() async {
+    var files = await filePickerController.selectFiles();
+
+    if (files == null) {
+      // imageBytes.value.clear();
+      return false;
+    } else {
+      if (files != null && files.first.bytes != null) {
+        imageBytes.value = files.first.bytes!;
+        imageBytes.refresh();
+        // print("imageBytes set.");
+        return true;
+      }
+    }
+    return null;
+  }
+
+  // bool get
 }
 
 class FilePickerContorller extends GetxController {

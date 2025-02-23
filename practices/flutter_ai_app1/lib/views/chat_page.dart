@@ -91,9 +91,9 @@ class _MyChatViewSTFState extends State<MyChatViewSTF> {
       appBar: AppBar(
         title: const Text("chat"),
       ),
-      body: Column(children: [
-        Expanded(
-          child: GetBuilder<ChatAIORTController>(
+      body: Expanded(
+        child: Column(children: [
+          GetBuilder<ChatAIORTController>(
             builder: (c) => ListView.builder(
                 itemCount: c.chatTextHistory.value.length,
                 itemBuilder: (context, index) {
@@ -104,89 +104,86 @@ class _MyChatViewSTFState extends State<MyChatViewSTF> {
                   // c.chatTextHistory.value[index].value),
                 }),
           ),
-        ),
-        Obx(() => Column(
-              children: [Text(chatAIORTController.rxGeneratedText.value)],
-            )),
-        // StreamBuilder(
-        //   stream: Stream.periodic(Duration(seconds: 1)),
-        //   builder: (context, snapshot) => Text(
-        //     "snapshot data: ${snapshot.data}",
-        //   ),
-        // ),
-        StreamBuilder<String>(
-          initialData: "input initialData.",
 
-          // stream: chatAIORTController.chatAIORT
-          //     .generateNextText(chatAIORTController.prompt_)
-          //     .asBroadcastStream(),
-          stream: chatAIORTController.textStreamController.stream,
-          // stream: chatAIORTController.chatAIORT
-          //     .generateNextText("what's your name?"),
-          // chatAIORTController.textStreamController.stream,
-          builder: (context, snapshot) {
-            // if (snapshot.connectionState == ConnectionState.waiting) {
-            //   return CircularProgressIndicator();
-            // } else {
-            if (snapshot.hasError) {
-              print("snapshot has error.");
-            }
-            switch (snapshot.connectionState) {
-              case ConnectionState.none:
-                return Text("you can input your query.");
-              case ConnectionState.waiting:
-                return Center(child: CircularProgressIndicator());
-              case ConnectionState.active:
-                if (snapshot.hasData) {
-                  return Flex(
-                    direction: Axis.horizontal,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Text(
-                          // "snapshot.data! : ${snapshot.data!}, generatedText : ${chatAIORTController.generatedText}");
-                          chatAIORTController.generatedText),
-                    ],
-                  );
-                } else {
-                  return Text("snapshot has no data.");
-                }
-              case ConnectionState.done:
-                return Text(chatAIORTController.generatedText);
-            }
+          // Obx(() => Column(
+          //       children: [Text(chatAIORTController.rxGeneratedText.value)],
+          //     )),
+          // StreamBuilder(
+          //   stream: Stream.periodic(Duration(seconds: 1)),
+          //   builder: (context, snapshot) => Text(
+          //     "snapshot data: ${snapshot.data}",
+          //   ),
+          // ),
+          StreamBuilder<String>(
+            initialData: "input initialData.",
 
-            // if (snapshot.hasData) {
-            //   chatAIORTController.generatedText += snapshot.data.toString();
-            //   return Text(chatAIORTController.generatedText);
-            // } else {
-            //   return Text("snapshot no data.");
-            // }
-            // // }
-          },
-        ),
-        Row(
-          children: [
-            Expanded(
-              child: TextFormField(
-                decoration: const InputDecoration(
-                  icon: Icon(Icons.person),
-                  hintText: 'prompt : ask question',
-                  labelText: 'User Input *',
+            // stream: chatAIORTController.chatAIORT
+            //     .generateNextText(chatAIORTController.prompt_)
+            //     .asBroadcastStream(),
+            stream: chatAIORTController.textStreamController.stream,
+            // stream: chatAIORTController.chatAIORT
+            //     .generateNextText("what's your name?"),
+            // chatAIORTController.textStreamController.stream,
+            builder: (context, snapshot) {
+              // if (snapshot.connectionState == ConnectionState.waiting) {
+              //   return CircularProgressIndicator();
+              // } else {
+              if (snapshot.hasError) {
+                print("snapshot has error.");
+              }
+              switch (snapshot.connectionState) {
+                case ConnectionState.none:
+                  return Text("you can input your query.");
+                case ConnectionState.waiting:
+                  return Center(child: CircularProgressIndicator());
+                case ConnectionState.active:
+                  if (snapshot.hasData) {
+                    return Text(
+                      // "snapshot.data! : ${snapshot.data!}, generatedText : ${chatAIORTController.generatedText}");
+                      chatAIORTController.generatedText,
+                      overflow: TextOverflow.ellipsis,
+                    );
+                  } else {
+                    return Text("snapshot has no data.");
+                  }
+                case ConnectionState.done:
+                  return Text(chatAIORTController.generatedText);
+              }
+
+              // if (snapshot.hasData) {
+              //   chatAIORTController.generatedText += snapshot.data.toString();
+              //   return Text(chatAIORTController.generatedText);
+              // } else {
+              //   return Text("snapshot no data.");
+              // }
+              // // }
+            },
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  decoration: const InputDecoration(
+                    icon: Icon(Icons.person),
+                    hintText: 'prompt : ask question',
+                    labelText: 'User Input *',
+                  ),
+                  controller: promptTextController,
                 ),
-                controller: promptTextController,
               ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                chatAIORTController.answerPrompt(promptTextController.text);
-                setState(() {});
-                // chatAIController.generateWhole(promptTextController.text);
-                // chatAIController.generate(promptTextController.text);
-              },
-              child: Text("send"),
-            )
-          ],
-        )
-      ]),
+              ElevatedButton(
+                onPressed: () {
+                  chatAIORTController.answerPrompt(promptTextController.text);
+                  setState(() {});
+                  // chatAIController.generateWhole(promptTextController.text);
+                  // chatAIController.generate(promptTextController.text);
+                },
+                child: Text("send"),
+              )
+            ],
+          )
+        ]),
+      ),
     );
   }
 }
