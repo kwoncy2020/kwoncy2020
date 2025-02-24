@@ -4,6 +4,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_ai_app1/controller.dart';
+import 'package:flutter_ai_app1/views/detection_page.dart';
+import 'package:flutter_ai_app1/views/enlight_page.dart';
 import 'model.dart';
 import 'package:get/get.dart';
 import 'package:file_picker/file_picker.dart';
@@ -21,65 +23,28 @@ void main() {
 //  Todo : Seperate remained code to model and controller.
 class MyApp extends StatelessWidget {
   MyApp({super.key});
-  var imageEnlightAIController = Get.put(ImageEnlightAIController());
-  String imageFileName = "";
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
       home: Scaffold(
-        body: Obx(
-          () => Center(
-            child: Column(
-              children: [
-                ElevatedButton(
-                  // onPressed: () => Get.to(() => MyChatView()),
-                  onPressed: () => Get.to(() => MyChatViewSTF()),
-                  child: const Text("chatAI"),
-                ),
-                Text(
-                  imageEnlightAIController.sharedLibLoadCheck.value == true
-                      ? "loaded"
-                      : "not loaded",
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    imageEnlightAIController.loadAILibrary();
-                  },
-                  child: const Text(
-                    "load dll",
-                  ),
-                ),
-                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  ElevatedButton(
-                    onPressed: () {
-                      imageEnlightAIController.loadImageFromFile();
-                    },
-                    child: const Text(
-                      "load image",
-                    ),
-                  ),
-                  ElevatedButton(
-                      onPressed: () {
-                        imageEnlightAIController.imageEnlight();
-                      },
-                      child: const Text("enhance light"))
-                ]),
-                if (imageEnlightAIController.imageBytes.value.isNotEmpty)
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Container(
-                          child: Image.memory(
-                        imageEnlightAIController.imageBytes.value,
-                      )),
-                    ),
-                  ),
-
-                // imageBytes.isNotEmpty && imageBytes.length > 0? Image.memory(ikmageScreenController.bytes.value) : Container()
-              ],
+        body: Center(
+          child: Column(children: [
+            ElevatedButton(
+              // onPressed: () => Get.to(() => MyChatView()),
+              onPressed: () => Get.to(() => MyChatViewSTF()),
+              child: const Text("chatAI"),
             ),
-          ),
+            // ElevatedButton(
+            //   onPressed: () => Get.to(() => MyEnlightView()),
+            //   child: const Text("ImageEnlightAI"),
+            // ),
+            // ElevatedButton(
+            //   onPressed: () => Get.to(() => MyDetectionView()),
+            //   child: const Text("ImageDetectionAI"),
+            // ),
+          ]),
         ),
       ),
     );

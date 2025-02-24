@@ -106,6 +106,13 @@ class ChatAIORTController extends GetxController {
     });
   }
 
+  @override
+  @mustCallSuper
+  dispose() {
+    chatAIORT.dispose();
+    super.dispose();
+  }
+
   void clearGeneratedText() {
     if (generatedText.isNotEmpty) generatedText = "";
   }
@@ -327,12 +334,14 @@ class ImageDetectionAIController extends GetxController {
       "flutter_assets", "my_modified_rtdetector.onnx");
 
   RxBool sharedLibLoadCheck = false.obs;
-  late int detect_limit = imageDetectionAI.detect_limit;
+  late int detectLimit = imageDetectionAI.detect_limit;
   var imageBytes = Uint8List(0).obs;
-  var out_num_detected = Int32().obs;
-  late var out_labels = Int32List(detect_limit).obs;
-  late var out_boxes = Float32List(detect_limit).obs;
-  late var out_scores = Float32List(detect_limit).obs;
+  Pointer<Int32> outNumDetected = malloc.allocate<Int32>(1);
+  late Pointer<Int32> outLabels = malloc.allocate<Int32>(detectLimit);
+  late Pointer<Float> outBoxes = malloc.allocate<Float>(detectLimit);
+  late Pointer<Float> outScores = malloc.allocate<Float>(detectLimit);
+  late Pointer<UnsignedChar> outImageMemory = malloc.allocate<UnsignedChar>(
+      imageDetectionAI.h * imageDetectionAI.w * imageDetectionAI.c);
 
   var filePickerController = FilePickerContorller();
 
@@ -356,6 +365,17 @@ class ImageDetectionAIController extends GetxController {
     }
   }
 
+  @override
+  dispose() {
+    malloc.free(outImageMemory);
+    malloc.free(outNumDetected);
+    malloc.free(outLabels);
+    malloc.free(outBoxes);
+    malloc.free(outScores);
+    imageDetectionAI.dispose();
+    super.dispose();
+  }
+
   Future<bool?> loadImageFromFile() async {
     var files = await filePickerController.selectFiles();
 
@@ -373,7 +393,51 @@ class ImageDetectionAIController extends GetxController {
     return null;
   }
 
-  // bool get
+  bool getDetectedImage() {
+    if (imageBytes.value.isEmpty) return false;
+    if (!imageDetectionAI.isModelLoaded) return false;
+
+    int modelH = imageDetectionAI.h;
+    int modelW = imageDetectionAI.w;
+    int modelC = imageDetectionAI.c;
+    int modelBufferByteLength =
+        modelH * modelW * modelC * sizeOf<UnsignedChar>(); // model's value
+
+    img.Image? tempImg = img.decodeImage(imageBytes.value);
+    if (tempImg == null) return false;
+
+    if (tempImg.width != modelW || tempImg.height != modelH) {
+      tempImg = img.copyResize(tempImg,
+          width: modelW,
+          height: modelH,
+          interpolation: img.Interpolation.cubic);
+    }
+    if (tempImg.lengthInBytes != modelBufferByteLength) {
+      return false;
+    }
+    outImageMemory
+        .cast<Uint8>()
+        .asTypedList(modelBufferByteLength)
+        .setAll(0, tempImg.buffer.asUint8List());
+
+    imageDetectionAI.inference_from_bytes(
+        imageDetectionAI.modelPtr, outImageMemory, modelBufferByteLength);
+    imageDetectionAI.get_detected_image(
+        imageDetectionAI.modelPtr, outImageMemory, modelBufferByteLength);
+
+    tempImg = img.Image.fromBytes(
+        width: modelW,
+        height: modelH,
+        bytes: outImageMemory
+            .cast<Uint8>()
+            .asTypedList(modelBufferByteLength)
+            .buffer);
+
+    imageBytes.value = img.JpegEncoder(quality: 100).encode(
+        img.copyCrop(tempImg, x: 0, y: 0, width: modelW, height: modelH));
+
+    return true;
+  }
 }
 
 class FilePickerContorller extends GetxController {
@@ -394,3 +458,12 @@ class FilePickerContorller extends GetxController {
     return files;
   }
 }
+
+
+// img.Image? getResizedImage(Uint8List imageBytes, int h, int w, img.Interpolation inter){
+//   img.Image? tempImg = img.decodeImage(imageBytes);
+//   if (tempImg == null) return null;
+
+//   int origImg
+
+// }
