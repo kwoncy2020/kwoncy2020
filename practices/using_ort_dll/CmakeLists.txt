@@ -27,10 +27,16 @@ target_include_directories(my_detection_ai PUBLIC ${CMAKE_SOURCE_DIR}
                                                 ${onnx_includes}
                                                 ${cv_includes}
                                                 )
+if (Win32)
+    set(link_lib ${CMAKE_SOURCE_DIR};C:/Users/kwoncy/dev/opencv/build/lib)
+    # set(link_lib C:/Users/kwoncy/dev/opencv/build/lib)
+elseif(ANDROID)
+    set(link_lib ${CMAKE_SOURCE_DIR}/lib_arm)
+endif()
+
 target_link_directories(my_detection_ai 
-                                        PUBLIC ${CMAKE_SOURCE_DIR}
-                                        PUBLIC C:/Users/kwoncy/dev/opencv/build/lib
-)
+                                        PUBLIC ${link_lib}
+                        )
 target_link_libraries(my_detection_ai onnxruntime DirectML opencv_core4120 opencv_highgui4120 opencv_imgproc4120 opencv_imgcodecs4120)
 
 add_executable(use_my_detection_ai ${CMAKE_SOURCE_DIR}/using_ort_dll_detection_test.cpp)

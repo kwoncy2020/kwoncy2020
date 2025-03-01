@@ -39,7 +39,7 @@ class ImageDetectionAI{
     bool inference_from_file(const char* file_path);
     bool inference_from_bytes(unsigned char* buffer_data, int length);
     bool get_detected_output_values(int* out_labels, float* out_boxes, float* out_scores, int* out_num_detected, int detect_limit);
-    bool get_drawed_image_with_detected_output(unsigned char* out_image, int image_data_length, int num_detected, int* labels, float* boxes, float* scores);
+    bool get_drawn_image_with_detected_output(unsigned char* out_image, int image_data_length, int num_detected, int* labels, float* boxes, float* scores);
     bool get_detected_image(unsigned char* out_image, int image_data_length);
     const char* get_last_error();
     bool is_model_loaded();

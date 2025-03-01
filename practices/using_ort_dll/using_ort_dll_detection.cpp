@@ -254,9 +254,10 @@ bool ImageDetectionAI::get_detected_output_values(int* out_labels, float* out_bo
         if (detect_limit>50 || detect_limit<0) detect_limit=50;
         if (detect_limit > _detect_limit) detect_limit = _detect_limit;
 
-        memset(out_labels,0,50);
-        memset(out_boxes,0,50*4);
-        memset(out_scores,0,50);
+        // detect_limit should be 50
+        memset(out_labels, 0, detect_limit*sizeof(int));    
+        memset(out_boxes, 0, detect_limit*4*sizeof(float));
+        memset(out_scores, 0, detect_limit*sizeof(float));
 
         void* output_buffer0;
         void* output_buffer1;
@@ -285,7 +286,7 @@ bool ImageDetectionAI::get_detected_output_values(int* out_labels, float* out_bo
     return true;
 }
 
-bool ImageDetectionAI::get_drawed_image_with_detected_output(unsigned char* out_image_data, int image_data_length, int num_detected, int* labels_ptr, float* boxes_ptr, float* scores_ptr){
+bool ImageDetectionAI::get_drawn_image_with_detected_output(unsigned char* out_image_data, int image_data_length, int num_detected, int* labels_ptr, float* boxes_ptr, float* scores_ptr){
     try{
 
         if (image_data_length != model_h*model_w*model_c){
@@ -333,9 +334,9 @@ bool ImageDetectionAI::get_detected_image(unsigned char* out_image_data, int ima
             return false;
         }
         int detect_limit = _detect_limit;
-        int* out_labels = new int[detect_limit];
-        float* out_boxes = new float[detect_limit*4];
-        float* out_scores = new float[detect_limit];
+        int* out_labels = new int[detect_limit*sizeof(int)];
+        float* out_boxes = new float[detect_limit*4*sizeof(float)];
+        float* out_scores = new float[detect_limit*sizeof(float)];
         int* out_num_detected= new int;
 
         if (!get_detected_output_values(out_labels, out_boxes, out_scores, out_num_detected, detect_limit)){
@@ -343,7 +344,7 @@ bool ImageDetectionAI::get_detected_image(unsigned char* out_image_data, int ima
             return false;
         }
 
-        if (!get_drawed_image_with_detected_output(out_image_data,image_data_length,*out_num_detected,out_labels,out_boxes,out_scores)){
+        if (!get_drawn_image_with_detected_output(out_image_data,image_data_length,*out_num_detected,out_labels,out_boxes,out_scores)){
             // last_error will be set in the function.
             return false;
         }

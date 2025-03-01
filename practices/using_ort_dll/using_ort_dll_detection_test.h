@@ -41,7 +41,7 @@ class ImageDetectionAI{
     bool inference_from_file(const char* file_path);
     bool inference_from_bytes(unsigned char* buffer_data, int length);
     bool get_detected_output_values(int* out_labels, float* out_boxes, float* out_scores, int* out_num_detected, int detect_limit);
-    bool get_drawed_image_with_detected_output(unsigned char* out_image, int image_data_length, int num_detected, int* labels, float* boxes, float* scores);
+    bool get_drawn_image_with_detected_output(unsigned char* out_image, int image_data_length, int num_detected, int* labels, float* boxes, float* scores);
     bool get_detected_image(unsigned char* out_image, int image_data_length);
     const char* get_last_error();
     bool is_model_loaded();
@@ -74,15 +74,15 @@ class ImageDetectionAI{
 
 
 extern "C"{
-    EXPORT_PREFIX void* init_model();
-    EXPORT_PREFIX void delete_model(void* ptr);
+    EXPORT_PREFIX void* create_detection_ai();
+    EXPORT_PREFIX void delete_detection_ai(void* ptr);
 
     EXPORT_PREFIX bool load_model(void* ptr, const char* model_path);
     EXPORT_PREFIX bool set_execution_provider(void* ptr, const char* provider);
     EXPORT_PREFIX bool inference_from_file(void* ptr, const char* file_path);
     EXPORT_PREFIX bool inference_from_bytes(void* ptr, unsigned char* buffer_data, int length);
     EXPORT_PREFIX bool get_detected_output_values(void* ptr, int* out_labels, float* out_boxes, float* out_scores, int* out_num_detected, int detect_limit);
-    EXPORT_PREFIX bool get_drawed_image_with_detected_output(void* ptr, unsigned char* out_image, int image_data_length, int num_detected, int* labels, float* boxes, float* scores);
+    EXPORT_PREFIX bool get_drawn_image_with_detected_output(void* ptr, unsigned char* out_image, int image_data_length, int num_detected, int* labels, float* boxes, float* scores);
     EXPORT_PREFIX bool get_detected_image(void* ptr, unsigned char* out_image, int image_data_length);
     EXPORT_PREFIX const char* get_last_error(void* ptr);
     EXPORT_PREFIX bool is_model_loaded(void* ptr);
