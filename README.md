@@ -15,33 +15,41 @@ https://github.com/kwoncy2020/kwoncy2020/tree/main/practices
 
 
 ## here's my project as a AI Engineer
-
-* making realtime lightweight hybrid detector model on my own and adapt ort training technology on it 
+* Making AI multi agent
+* (Ollama, LangChain, LangGraph, RAG)
+  - https://github.com/kwoncy2020/kwoncy2020/tree/main/practices/AI_multi_agent
+<br/><br/><br/>
+* Making a flutter app with on-device sLM 
+* (ONNX-Runtime & TFLite c++ backend, without internet access nor python, also object detection model and image enhance model integrated.)
+* (apply 8 bit quantization and coroutine on flutter to simulate other chatbot, you can see code and demo below url and youtube)
+  - https://github.com/kwoncy2020/kwoncy2020/tree/main/practices/flutter_ai_app1
+  - https://www.youtube.com/watch?v=D--Q8_ORoiE
+<br/><br/><br/>
+* Making realtime lightweight hybrid detector model on my own and adapt ort training technology on it 
   - https://github.com/kwoncy2020/ort_training (currently not on public for security reason)
     - hybrid detector, onnxruntime, onnx, on-device training
-      
-* inference quantized model on mobile with c++ using hardware accelerators such as snapdragon npu, mobile gpu, 8bit model on cpu
+<br/><br/><br/>
+* Inference quantized model on mobile with c++ using hardware accelerators such as snapdragon npu, mobile gpu, 8bit model on cpu
   - https://github.com/kwoncy2020/tflite_dlc_for_android (currently not on public for security reason)
     - qualcomm snpe sdk, tflite hexagon, nnapi delegates
-
-* xcode object detection (barcode, qrcode, mpcode, pdf417, dmtx) based on mobilenet model and remake the model, dataloader ; also rearrage training strategies 
+<br/><br/><br/>
+* Xcode object detection (barcode, qrcode, mpcode, pdf417, dmtx) based on mobilenet model and remake the model, dataloader ; also rearrage training strategies 
   - https://github.com/kwoncy2020/ssd-pytorch-qfgaohao (currently not on public for security reason)
     - pytorch, tensorflow lite c, c++, opencv, pyqt, bazel, android ndk, 
-
-
-* auto detect stroke in dysarthria patients voice ( custom model consists of custom resnet and custom transformer - model2.py )
+<br/><br/><br/>
+* Auto detect stroke in dysarthria patients voice ( custom model consists of custom resnet and custom transformer - model2.py )
   - https://github.com/kwoncy2020/dysarthria_stroke_auto_detection
     - tensorflow, librosa
-    
-* nystagmus tool for helping the project named "nystagmus auto detection" 
+<br/><br/><br/>
+* Nystagmus tool for helping the project named "nystagmus auto detection" 
   - https://github.com/kwoncy2020/nystagmus-tool
     - pyqt5, tensorflow, opencv, numpy, matplotlib
-    
-* nystagmus auto detection on medical video 
+<br/><br/><br/>
+* Nystagmus auto detection on medical video 
   - https://github.com/kwoncy2020/nystagmus_auto_detection
     - tensorflow, scikit-learn, opencv, numpy, matplotlib
-
-* nystagmus tool with mfc (this is just a temporal project due to its development time. you can see how to connect tensorflow model made by python to c++)
+<br/><br/><br/>
+* Nystagmus tool with mfc (this is just a temporal project due to its development time. you can see how to connect tensorflow model made by python to c++)
   - https://github.com/kwoncy2020/load-tensorflow-model-on-cplusplus-with-opencv
     - c++, mfc, opencv, tensorflow, pytorch
 
