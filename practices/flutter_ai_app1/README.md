@@ -1,16 +1,42 @@
-# flutter_ai_app1
+# Flutter AI app 
+## (sLM + ONNX_Runtime + TFLite c++ backend + object detection + image enhance)
+## (This is focus on-device run without internet access nor python)
 
-A new Flutter project.
+* Chat AI running as like other chatbot without waiting generation done.
+![demo_chat](./demo/clip_chat_merged_fast.gif)
+<br/><br/>
+* Image Enhance AI with very small model, less than 1MB.
+![demo_image_enhacement](./demo/clip_enhance_image_merged_fast.gif)
+<br/><br/>
+* Object detection AI with recent state-of-art real time detection
+* (The model hasn't findtuned, been Quantized 8int.)
+* (I just downloaded the model and did PTQ. the accuracy is not good. finetuning and QAT will show better accuracy.)
+![demo_object_detection](./demo/clip_object_detection_fast.gif)
+<br/><br/>
 
-## Getting Started
+full demo video - https://youtu.be/D--Q8_ORoiE
 
-This project is a starting point for a Flutter application.
+Flutter app integrated with AI backend(tflite, onnxruntime) and able to run chat AI without internet.
 
-A few resources to get you started if this is your first Flutter project:
+This app is for my personal fortpolio to show how it works.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+The majority backend module made by c++ for realtime serving.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+This app is able to run from light weight small AI model for object detection and image enhancement to heavy AI model for generate AI such as chat-gpt.
+
+You can make your own AI model or just download from the open-source with its weight if you don't have enough training resources.
+Convert AI model from to onnx format if you want to use onnxruntime backend or tflite for using LiteRT(previous tensorflow-lite).
+
+Build it with backend libraries and link to the flutter through ffi.dart.
+
+
+You can see some hints how to make this app on the below url.
+https://github.com/kwoncy2020/kwoncy2020/tree/main/practices/flutter_ai_app1
+
+And also able to see which kinds of errors I've been through. (the majors I recorded without trivial errors)
+https://github.com/kwoncy2020/kwoncy2020/tree/main/error_history
+
+If you want to see how I used backend runtime libraries, Then take a look into below urls. (the codes are not decent since I prefer to leave what I tried so that I can come up with previous my try easily. This is for my practice after all)
+https://github.com/kwoncy2020/kwoncy2020/tree/main/practices/tflite_runtime
+https://github.com/kwoncy2020/kwoncy2020/tree/main/practices/using_ort_dll
+
