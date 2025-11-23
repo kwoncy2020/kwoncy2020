@@ -1,7 +1,9 @@
 # Flutter AI app 
 ## (sLM + ONNX_Runtime + TFLite c++ backend + object detection + image enhance)
 ## (This is focus on-device run without internet access nor python)
-
+<br/><br/>
+* You can see demo and full video link below
+<br/><br/>
 * Chat AI running as like other chatbot without waiting generation done.
 ![demo_chat](./demo/clip_chat_merged_fast.gif)
 <br/><br/>
