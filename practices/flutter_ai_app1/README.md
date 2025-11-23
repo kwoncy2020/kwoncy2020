@@ -1,5 +1,5 @@
 # Flutter AI app 
-## (sLM + ONNX_Runtime + TFLite c++ backend + object detection + image enhance)
+## (sLM + ONNX_Runtime + TFLite + c++ backend + object detection + image enhance)
 ## (This is focus on-device run without internet access nor python)
 <br/><br/>
 * You can see demo and full video link below
@@ -24,7 +24,9 @@ This app is for my personal fortpolio to show how it works.
 
 The majority backend module made by c++ for realtime serving.
 
-This app is able to run from light weight small AI model for object detection and image enhancement to heavy AI model for generate AI such as chat-gpt.
+This app is able to run from light weight small AI model for object detection and image enhancement. 
+
+Small LLM generate model also integrated with fast response on my laptop(without gpu, only cpu).
 
 You can make your own AI model or just download from the open-source with its weight if you don't have enough training resources.
 Convert AI model from to onnx format if you want to use onnxruntime backend or tflite for using LiteRT(previous tensorflow-lite).
