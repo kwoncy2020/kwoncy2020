@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "C++ Debug GUI",
+            "type": "lldb",
+            "request": "launch",
+            // CMake가 현재 폴더에서 빌드한 .exe 경로를 자동으로 잡습니다.
+            "program": "${command:cmake.launchTargetPath}",
+            "args": [],
+            "cwd": "${workspaceFolder}", // 현재 디버깅 중인 폴더 기준
+            "stopAtEntry": false,
+            "preLaunchTask": "CMake: build", // 실행 전 자동으로 빌드 수행
+            "env": {
+                // DLL 경로 문제가 있다면 여기에 추가 (예: vcpkg)
+                "PATH": "${env:PATH}"
+            },
+            "console": "integratedTerminal"
+        }
+    ]
+}

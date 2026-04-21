@@ -1,0 +1,9 @@
+{
+    "clangd.arguments": [
+        "--header-insertion=never",
+        "--all-scopes-completion",
+        "--all-scopes-completion",
+        // 현재 폴더를 기준으로 인덱싱하도록 유도
+        "--project-root=${fileDirname}" 
+    ]
+}
