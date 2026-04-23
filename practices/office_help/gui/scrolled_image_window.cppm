@@ -20,7 +20,6 @@ public:
     void SetController(ImageEditController* controller);
     ImageEditController* GetController() const;
     
-        
     void SetImage(const cv::Mat& image);
     void ClearImage();
     
@@ -29,11 +28,15 @@ public:
     void SetImageDataById(const std::string& id);
     std::string GetCurrentImageDataId() const;
     std::vector<std::string> GetAvailableImageDataIds() const;
+    
+    // Bounding box display control
+    void SetBoundingBoxDisplayMode(bool showBoundingBoxes);
+    bool GetBoundingBoxDisplayMode() const;
 
 private:
     // Image data
-    cv::Mat m_originalImage;  // Original image without bounding boxes
-    cv::Mat m_image;         // Display image (with bounding boxes applied)
+    cv::Mat m_originalImage;      // Original image without bounding boxes
+    cv::Mat m_imageDisplayMatRGB; // Display image in RGB format (with bounding boxes applied)
     int m_imageWidth;
     int m_imageHeight;  
     int m_clientWidth;
@@ -51,6 +54,7 @@ private:
     bool m_isDrawingBox;
     wxPoint m_currentBoxScreenStartPos;
     wxPoint m_currentBoxScreenPos;
+    bool m_showBoundingBoxes;
     
     // Pre-calculated values for performance (updated only on size changes)
     double m_scrollRatioX;
@@ -63,6 +67,10 @@ private:
     
     // Image data management
     std::string m_currentImageDataId;
+    
+    // Image caching for performance optimization
+    wxBitmap m_cachedDisplayBitmap;
+    bool m_isCacheValid;
     ImageEditController* m_controller;
     
     void OnSize(wxSizeEvent& event);
@@ -75,7 +83,6 @@ private:
     
     
     void updateValuesByResize();
-    void UpdateDisplayImage();
     void DrawBoundingBoxes(wxPaintDC& dc);
     void ConvertAxisToImageAxis(int screenX, int screenY, int& imageX, int& imageY);
     wxPoint ConvertScreenToImage(const wxPoint& screenPos) const;

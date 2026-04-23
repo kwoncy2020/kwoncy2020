@@ -13,9 +13,10 @@ ScrolledImageWindow::ScrolledImageWindow(wxWindow* parent, wxWindowID id,
                                        const wxPoint& pos, 
                                        const wxSize& size)
     : wxScrolledWindow(parent, id, pos, size), 
-      m_isDragging(false), m_leftPressed(false), m_rightPressed(false),
-      m_isDrawingBox(false), m_currentBoxScreenPos(0, 0),
+      m_isDragging(false), m_leftPressed(false), m_rightPressed(false), m_showBoundingBoxes(true),
+      m_isDrawingBox(false), m_currentBoxScreenStartPos(0, 0),
       m_scrollRatioX(1.0), m_scrollRatioY(1.0),
+      m_isCacheValid(false),
       m_controller(nullptr) {
     
     SetScrollRate(10, 10); // Scroll rate in pixels
@@ -44,7 +45,7 @@ ScrolledImageWindow::ScrolledImageWindow(wxWindow* parent, wxWindowID id,
 void ScrolledImageWindow::SetImage(const cv::Mat& image) {
     if (image.empty()) {
         m_originalImage = cv::Mat();
-        m_image = cv::Mat();
+        m_imageDisplayMatRGB = cv::Mat();
         SetVirtualSize(100, 100); // Default size when no image
         m_imageWidth = 0;
         m_imageHeight = 0;
@@ -63,12 +64,16 @@ void ScrolledImageWindow::SetImage(const cv::Mat& image) {
     m_currentImageDataId = m_controller->LoadImageFromMat(image);
     
     // Get display image from controller
-    m_image = m_controller->GetDisplayImage(m_currentImageDataId);
+    m_imageDisplayMatRGB = m_controller->GetDisplayImage(m_currentImageDataId, m_showBoundingBoxes, ImageData::ImageFormat::RGB);
+    
+    // Update cache with new image
+    m_cachedDisplayBitmap = wxBitmap(wxImage(m_imageDisplayMatRGB.cols, m_imageDisplayMatRGB.rows, m_imageDisplayMatRGB.data, true));
+    m_isCacheValid = true;
     
     // Set virtual size to image dimensions
-    SetVirtualSize(m_image.cols, m_image.rows);
-    m_imageWidth = m_image.cols;
-    m_imageHeight = m_image.rows;
+    SetVirtualSize(m_imageDisplayMatRGB.cols, m_imageDisplayMatRGB.rows);
+    m_imageWidth = m_imageDisplayMatRGB.cols;
+    m_imageHeight = m_imageDisplayMatRGB.rows;
     
     updateValuesByResize();
     Refresh();
@@ -76,31 +81,13 @@ void ScrolledImageWindow::SetImage(const cv::Mat& image) {
 
 void ScrolledImageWindow::ClearImage() {
     m_originalImage = cv::Mat();
-    m_image = cv::Mat();
+    m_imageDisplayMatRGB = cv::Mat();
     m_imageWidth = 0;
     m_imageHeight = 0;
     SetVirtualSize(100, 100);
     Refresh();
 }
 
-void ScrolledImageWindow::UpdateDisplayImage() {
-    if (m_originalImage.empty()) {
-        m_image = cv::Mat();
-        return;
-    }
-    
-    // Get display image from controller (which includes bounding boxes)
-    if (!m_controller) {
-        m_image = m_originalImage.clone();
-        return;
-    }
-    
-    if (m_controller && !m_currentImageDataId.empty()) {
-        m_image = m_controller->GetDisplayImage(m_currentImageDataId);
-    } else {
-        m_image = m_originalImage.clone();
-    }
-}
 
 void ScrolledImageWindow::OnSize(wxSizeEvent& event) {
     updateValuesByResize();
@@ -113,7 +100,7 @@ void ScrolledImageWindow::OnPaint(wxPaintEvent& event) {
     wxPaintDC dc(this);
     PrepareDC(dc);   
     
-    if (m_image.empty()) {
+    if (m_imageDisplayMatRGB.empty()) {
         // Draw placeholder text when no image is loaded
         dc.SetBrush(GetBackgroundColour());
         dc.Clear();
@@ -122,30 +109,28 @@ void ScrolledImageWindow::OnPaint(wxPaintEvent& event) {
         return;
     }
     
-    // Convert OpenCV Mat to wxBitmap for display
-    cv::Mat converted;
-    if (m_image.channels() == 3) {
-        cv::cvtColor(m_image, converted, cv::COLOR_BGR2RGB);
-    } else if (m_image.channels() == 4) {
-        cv::cvtColor(m_image, converted, cv::COLOR_BGRA2RGB);
-    } else if (m_image.channels() == 1) {
-        cv::cvtColor(m_image, converted, cv::COLOR_GRAY2RGB);
+    // Use cached bitmap if available, otherwise convert from Mat
+    wxBitmap bitmap;
+    if (!m_showBoundingBoxes && m_isCacheValid) {
+        bitmap = m_cachedDisplayBitmap;
     } else {
-        converted = m_image.clone();
+        // get bounded display image if boxes exist
+        cv::Mat boxedImage = m_controller->GetDisplayBoxedImage(m_currentImageDataId, m_imageDisplayMatRGB);
+        wxImage wxImg(boxedImage.cols, boxedImage.rows, boxedImage.data, true);
+        bitmap = wxBitmap(wxImg);
     }
     
-    wxImage wxImg(converted.cols, converted.rows, converted.data, true);
-    wxBitmap bitmap(wxImg);
-    
-    // Draw the image at the origin of the scrolled window
+    // Draw image at origin of scrolled window
     dc.DrawBitmap(bitmap, 0, 0, false);
     
-    // Draw bounding boxes if any exist
-    DrawBoundingBoxes(dc);
+    if (m_showBoundingBoxes) {
+        // Draw bounding boxes if any exist
+        DrawBoundingBoxes(dc);
+    }
 }
 
 void ScrolledImageWindow::OnMouseDown(wxMouseEvent& event) {
-    if (m_image.empty()) return;
+    if (m_imageDisplayMatRGB.empty()) return;
     if (event.LeftDown()) m_leftPressed = true;
     if (event.RightDown()) m_rightPressed = true;
     
@@ -158,8 +143,11 @@ void ScrolledImageWindow::OnMouseDown(wxMouseEvent& event) {
         // m_currentBoxScreenPos = wxPoint(0, 0);
         m_isDragging = true;
     }
+    if (!m_showBoundingBoxes) {
+        m_isDrawingBox = false;
+    }
 
-    if (m_isDrawingBox) {
+    if (m_isDrawingBox&&m_showBoundingBoxes) {
         wxPoint pos = event.GetPosition();
         // save box start position
         // Convert screen coordinates to image coordinates
@@ -192,7 +180,7 @@ void ScrolledImageWindow::OnMouseUp(wxMouseEvent& event) {
     if (event.LeftUp()) m_leftPressed = false;
     if (event.RightUp()) m_rightPressed = false;
     
-    if (m_isDrawingBox && event.LeftUp()) {
+    if (m_isDrawingBox && event.LeftUp()&&m_showBoundingBoxes) {
         // Finalize bounding box drawing
         m_isDrawingBox = false;
         wxPoint curPos = event.GetPosition();
@@ -206,11 +194,9 @@ void ScrolledImageWindow::OnMouseUp(wxMouseEvent& event) {
             // ConvertAxisToImageAxis(endX, endY, endImageX, endImageY);
             BoundingBox box(startImageX, startImageY, w, h);
             if (m_controller) {
-
                 m_controller->AddBoundingBox(m_currentImageDataId, box);
             }
-            // Update display image with new bounding box
-            UpdateDisplayImage();
+
             if (HasCapture()) {
             ReleaseMouse();
             }
@@ -236,7 +222,7 @@ void ScrolledImageWindow::OnMouseUp(wxMouseEvent& event) {
 }
 
 void ScrolledImageWindow::OnMouseMove(wxMouseEvent& event) {
-    if (!m_image.empty()) {
+    if (!m_imageDisplayMatRGB.empty()) {
             // Trigger refresh to show the box being drawn
             Refresh();
         }
@@ -272,7 +258,7 @@ void ScrolledImageWindow::OnMouseMove(wxMouseEvent& event) {
 
         m_lastMousePos = currentPos;
     }
-    else if(m_isDrawingBox) {
+    else if(m_isDrawingBox&&m_showBoundingBoxes) {
         // modify  m_currentBoxScreenPos values based on mouse position
         wxPoint pos = event.GetPosition();
         m_currentBoxScreenPos = pos;
@@ -283,7 +269,7 @@ void ScrolledImageWindow::OnMouseMove(wxMouseEvent& event) {
 
 
 void ScrolledImageWindow::OnMouseDoubleClick(wxMouseEvent& event) {
-    if (event.RightDClick() && !m_image.empty()) {
+    if (event.RightDClick() && !m_imageDisplayMatRGB.empty()) {
         // Get mouse position in image coordinates
         wxPoint pos = event.GetPosition();
         int imageX, imageY;
@@ -294,8 +280,6 @@ void ScrolledImageWindow::OnMouseDoubleClick(wxMouseEvent& event) {
             m_controller->RemoveBoundingBoxAt(m_currentImageDataId, imageX, imageY);
         }
         
-        // Update display image with modified bounding boxes
-        UpdateDisplayImage();
         Refresh();
     }
     event.Skip();
@@ -303,15 +287,12 @@ void ScrolledImageWindow::OnMouseDoubleClick(wxMouseEvent& event) {
 
 void ScrolledImageWindow::DrawBoundingBoxes(wxPaintDC& dc) {
     // Draw current box being drawn (dynamic bounding box)
-    if (m_isDrawingBox) {
-        // OnPaint 함수 내에서 PrepareDC(dc)를 호출한 뒤 화면에 바운딩 박스를 그리는 것이기 때문에
-        // 클라이언트 좌표를 그대로 사용할 수 없다. 마치 이미지 좌표계를 사용하듯이 해야함.   
-        // 좌클릭+우클릭으로 스크롤을 이동하는 함수가  PrepareDC(dc)아래에서 동작하기에 비활성 할 수 없음.
+    if (m_isDrawingBox && m_showBoundingBoxes) {
         
         auto [x,y,w,h] = Utils::getBoxValuesFromPoints(m_currentBoxScreenStartPos.x, m_currentBoxScreenStartPos.y, m_currentBoxScreenPos.x, m_currentBoxScreenPos.y, "xywh");
         int imageX, imageY;
         ConvertAxisToImageAxis(x, y, imageX, imageY);
-        
+
         // Only draw if box has valid dimensions
         if (w > 0 && h > 0) {
             // Set pen for green outline
@@ -409,6 +390,11 @@ void ScrolledImageWindow::ConvertAxisToImageAxis(int ClientX, int ClientY, int& 
 // }
 
 // Controller injection methods
+void ScrolledImageWindow::SetBoundingBoxDisplayMode(bool showBoundingBoxes) {
+    m_showBoundingBoxes = !showBoundingBoxes;
+    Refresh();
+}
+
 void ScrolledImageWindow::SetController(ImageEditController* controller) {
     m_controller = controller;
 }
@@ -438,12 +424,12 @@ void ScrolledImageWindow::SetImageDataById(const std::string& id) {
     if (imageData && imageData->HasImage()) {
         m_currentImageDataId = id;
         m_originalImage = imageData->GetImage();
-        m_image = m_controller->GetDisplayImage(m_currentImageDataId);
+        m_imageDisplayMatRGB = m_controller->GetDisplayImage(m_currentImageDataId);
         
         // Set virtual size to image dimensions
-        SetVirtualSize(m_image.cols, m_image.rows);
-        m_imageWidth = m_image.cols;
-        m_imageHeight = m_image.rows;
+        SetVirtualSize(m_imageDisplayMatRGB.cols, m_imageDisplayMatRGB.rows);
+        m_imageWidth = m_imageDisplayMatRGB.cols;
+        m_imageHeight = m_imageDisplayMatRGB.rows;
         
         updateValuesByResize();
         Refresh();

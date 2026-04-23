@@ -44,16 +44,16 @@ void ImageData::RemoveBoundingBox(int index) {
 
 void ImageData::RemoveBoundingBoxAt(int x, int y) {
     int index = FindBoundingBoxAt(x, y);
-    if (index != -1) {
+    if (index > -1) {
         RemoveBoundingBox(index);
     }
 }
 
 int ImageData::FindBoundingBoxAt(int x, int y) const {
     // reverse order to find the topmost box first
-    for (size_t i = m_boundingBoxes.size()-1; i>=0 ; --i) {
+    for (int i = static_cast<int>(m_boundingBoxes.size()) - 1; i >= 0; --i) {
         if (m_boundingBoxes[i].Contains(x, y)) {
-            return static_cast<int>(i);
+            return i;
         }
     }
     return -1;

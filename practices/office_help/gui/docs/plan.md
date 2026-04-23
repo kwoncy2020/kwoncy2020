@@ -15,21 +15,24 @@ GUI application using wxWidgets and OpenCV with C++20 modules system. The applic
 - **언어**: C++20 modules
 - **패턴**: MVC, Repository, Dependency Injection
 
-
 ## 현재 상태 및 제약사항
-1. 현재 ImageData클래스에서 이미지 format을 제대로 추적하고 있지 않습니다. 채널이 3개인경우 rgb인지 bgr인지 구분하지 않고 있습니다. 이를 확실히 구분해야하며 이 값을 제대로 알려면 opencv에서 파일을 어떻게 열었는지 알아야합니다. 또한 opencv말고도 다른 라이브러리로도 이미지를 처리해야할 경우가 생길 수 있기에 처음 ImageData를 생성할때 format을 함께 전달해야합니다.2. 현재는 opencv라이브러리 하나를 사용하는데, 다른 라이브러리를 사용할 수 도 있으니 Controller에서 처리하는게 좋아보입니다.
+1. 스크롤 윈도우가 표시되는 패널에 바운딩박스를 보여줄지 안보여줄지 결정하는 체크박스컨트롤을 추가하여 표시/비표시를 제어할 수 있도록 함.
+2. 스크롤 윈도우가 OnPaint메서드를 만날때 계속 이미지 copy가 일어나는 것을 확인할 수 있음. 만약 바운딩박스를 보여줄 필요가 없으면 copy가 일어나지 않고 캐싱된 기본 이미지를 보여주어야함.
 
+3. 저장된 바운딩박스를 순서대로 좌표값과 함께 보여주는 리스트박스를 추가하여 선택된 바운딩박스를 기반으로 이미지에서 해당영역을 확대해서 보여줄 수 있도록 함.
+4. 픽셀세그멘테이션모드를 추가하여 바운딩박스 로직을 비활성하고 마우스 좌클릭시 픽셀 한칸 한칸마다 세그멘테이션을 할 수 있도록 기능을 추가합니다. 해당 기능은 물체의 외곽선을 빠르게 추출하는데 도움이 될 예정입니다.
 
-
-## 주요 목표: Controller를 통한 관심사 분리
-1. Controller를 추가하여 GUI부분에서 관심사를 분리할 예정입니다.
-2. 파일로드로 얻게된 이미지데이터에 대한 정보는 ImageData클래스가 관리합니다.
-3. Controller는 Repository를 통해 ImageData를 관리합니다.
-4. ImageProcessor는 모든 이미지 처리 및 렌더링을 담당하고 Controller가 이를 조율합니다.
+## 나중에 해야할일
+1. Controller의 GetDisplayImage는 디스플레이 포맷과 저장된 ImageData의 포맷이 다를경우 지속적으로 변환하고 카피함. 이것을 캐싱하여 불필요한 변환과 카피를 줄일 수 있도록 개선해야함.
+2. 스크롤윈도우가 이미지업데이트하는 과정 리팩토링해야함. 컨트롤러가 없거나 id가 없는 경우를 가정하고 복제가 발생하고 그외 복제가 자꾸 일어나는경우가있음. 체크하고 불필요한 과정 전부 삭제.
+3. updatedisplay메서드가 언제 호출되는지 알아야함. 불필요한 복제 다수 의심. 화면을 갱신하는 메서드가 OnPaint, Refresh가 있어서 더 복잡해짐.
+4. SetBoundingBoxDisplayMode에서 캐시가 항상 꺼짐으로 바뀜. 어째서? 처음 이미지를 로드할 때 이미 원본데이터를 가지고 있는데다가 해당 원본데이터를 한번만 디스플레이하기위해 변환한 이후에 캐시로 저장하면 되는데...
+5. 컨트롤러의 GetDisplayImage 리팩토링. 해당 메서드에서 바운딩박스 그리기와 이미지변환이 같이 이루어짐. 이 두가지 로직을 분리하여 캐시를 효율적으로 사용할 수 있도록 개선해야함.
+6. wx위젯에 이미지를 그리기위해 최종적으로 wxBitmap으로 변환해야함. 이 과정에서 캐시를 사용하여 불필요한 변환을 줄일 수 있도록 개선해야함. 스크롤윈도우가 원본이미지말고도 변환된 wxBitmap도 가지고있을것. 포맷을 직관적으로 알 수 있도록 멤버변수이름에 _wxbitmap suffix를 붙여야함.
 
 ## 최종 아키텍처
 ```
-GUI → ScrolledImageWindow → ImageController → ImageDataRepository → ImageData (데이터만)
+GUI → ScrolledImageWindow → ImageEditController → ImageDataRepository → ImageData (데이터만)
                                               ↓
                                       ImageProcessor (모든 처리/렌더링)
                                               ↓
@@ -43,11 +46,6 @@ GUI → ScrolledImageWindow → ImageController → ImageDataRepository → Imag
 - **ImageData**: 순수 데이터 모델 (원본 이미지, 바운딩박스, 메타데이터)
 - **ImageProcessor**: 모든 이미지 처리 (렌더링, 이진화, 외곽선 검출, 템플릿 매칭 등)
 
-
-
-
-
-
 ## 상세 구현 계획
 
 ### Phase 1: 기본 아키텍처 구축 ✅
@@ -58,11 +56,23 @@ GUI → ScrolledImageWindow → ImageController → ImageDataRepository → Imag
 
 ### Phase 2: 아키텍처 재설계 및 GUI 연동 ✅
 1. **ImageProcessor가 모든 처리 담당하도록 재설계** ✅
-2. **ImageData에서 렌더링 로직 제거** (진행 중)
+2. **ImageData에서 렌더링 로직 제거** ✅
 3. **ScrolledImageWindow에 Controller 주입 구현** ✅
 4. **Repository 직접 참조 제거** ✅
 
-### Phase 3: 이미지 처리 기능 확장
+### Phase 3: 이미지 메타데이터 및 바운딩박스 기능 완성 ✅
+1. **ImageFormat enum 및 라이브러리 독립적 포맷 추적** ✅
+2. **바운딩박스 드로잉 좌표 시스템 통일** ✅
+3. **마우스 캡처 및 이벤트 처리 안정화** ✅
+4. **Utils 모듈 생성 및 좌표 계산 함수 구현** ✅
+
+### Phase 4: GUI 사용자 경험 개선 (진행 중)
+1. **바운딩박스 표시/비표시 체크박스 컨트롤 추가** 🔄
+2. **바운딩박스 외곽선만 표시 기능** ✅
+3. **최상위 바운딩박스 우선 선택 로직** ✅
+4. **마우스 캡처 관련 성능 최적화** ✅
+
+### Phase 5: 고급 이미지 처리 기능 (예정)
 1. **ImageProcessor에 고급 처리 기능 추가**
    - 이진화, 외곽선 검출, 템플릿 매칭
    - 특징점 매칭, AI 적용 준비
@@ -83,10 +93,21 @@ GUI → ScrolledImageWindow → ImageController → ImageDataRepository → Imag
    - ScrolledImageWindow에 Controller 주입
    - Repository 직접 참조 제거
    - 아키텍처 재설계 (ImageProcessor가 모든 처리 담당)
+3. **Phase 3: 이미지 메타데이터 및 바운딩박스 기능 완성** ✅
+   - ImageFormat enum 및 라이브러리 독립적 포맷 추적
+   - 바운딩박스 드로잉 좌표 시스템 통일
+   - 마우스 캡처 및 이벤트 처리 안정화
+   - Utils 모듈 생성 및 좌표 계산 함수 구현
+   - 바운딩박스 외곽선만 표시 기능
+   - 최상위 바운딩박스 우선 선택 로직
+   - 마우스 캡처 관련 성능 최적화
 
 ### 🔄 현재 진행 중
-3. **Phase 3: 이미지 처리 기능 확장**
-   - [진행 중] ImageData에서 렌더링 로직 제거 및 ImageProcessor로 이전
+4. **Phase 4: GUI 사용자 경험 개선**
+   - [진행 중] 바운딩박스 표시/비표시 체크박스 컨트롤 추가
+
+### 📋 대기 중
+5. **Phase 5: 고급 이미지 처리 기능**
    - [대기] ImageProcessor에 고급 처리 기능 추가
    - [대기] Controller에서 처리 파이프라인 구현
    - [대기] 성능 최적화 (캐싱)
@@ -97,8 +118,18 @@ GUI → ScrolledImageWindow → ImageController → ImageDataRepository → Imag
 3. [완료] 기존 GUI와의 최소 연동
 4. [완료] 빌드 및 기본 기능 테스트
 5. [완료] 아키텍처 재설계
-6. [진행 중] ImageData 렌더링 로직 제거
-7. [높음] ImageProcessor 고급 처리 기능 추가
-8. [높음] Controller 처리 파이프라인 구현
-9. [중간] 성능 최적화 (캐싱)
-10. [낮음] 스크롤윈도우 리팩토링 (추후)
+6. [완료] ImageData 렌더링 로직 제거
+7. [완료] 이미지 메타데이터 추적 개선
+8. [완료] 바운딩박스 드로잉 시스템 안정화
+9. [높음] 바운딩박스 표시/비표시 체크박스 컨트롤 추가
+10. [중간] ImageProcessor 고급 처리 기능 추가
+11. [중간] Controller 처리 파이프라인 구현
+12. [낮음] 성능 최적화 (캐싱)
+13. [낮음] 스크롤윈도우 리팩토링 (추후)
+
+## 주요 기술적 성과
+- **C++20 모듈 시스템**: 성공적으로 모듈 기반 아키텍처 구현
+- **관심사 분리**: GUI, Controller, Repository, Processor 명확한 분리
+- **이미지 포맷 추적**: 라이브러리 독립적 ImageFormat enum으로 확장성 확보
+- **좌표 시스템 통일**: 스크린/이미지 좌표 변환 시스템 안정화
+- **마우스 이벤트 처리**: wxEVT_MOUSE_CAPTURE_LOST 핸들러로 안정성 확보

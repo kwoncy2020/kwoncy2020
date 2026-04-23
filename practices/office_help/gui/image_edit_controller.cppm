@@ -24,7 +24,11 @@ public:
     // Image access operations
     ImageData* GetImageData(const std::string& id);
     cv::Mat GetImage(const std::string& id);
-    cv::Mat GetDisplayImage(const std::string& id);
+    cv::Mat GetDisplayImage(const std::string& id, bool showBoundingBoxes = true, ImageData::ImageFormat targetFormat = ImageData::ImageFormat::RGB);
+    cv::Mat GetDisplayBoxedImage(const std::string& id, cv::Mat& convertedMat);
+    
+    // Image format access
+    std::string GetImageFormat(const std::string& id) const;
     
     // Image metadata operations
     std::string GetImageName(const std::string& id) const;

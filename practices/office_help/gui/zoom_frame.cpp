@@ -16,7 +16,7 @@ ZoomFrame::ZoomFrame(wxWindow* parent) : wxFrame(parent, wxID_ANY, "", wxDefault
 
 void ZoomFrame::UpdateDisplay(const cv::Mat& mat) {
     // Mat -> wxBitmap 변환 로직 (실제 구현 시 유틸리티 함수 사용)
-    m_bitmap = ImageProcessor::ConvertMatToBitmap(mat); 
+    m_bitmap = ImageProcessor::ConvertMatToWXBitmap(mat); 
     Refresh();
 }
 

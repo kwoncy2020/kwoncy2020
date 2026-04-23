@@ -70,6 +70,15 @@ public:
         m_imageOrigSizeText = new wxStaticText(imgPanel, wxID_ANY, wxString::FromUTF8("크기: 없음"));
         rightSizer->Add(m_imageOrigSizeText, 0, wxALL, 5);
         
+        // Bounding box display control
+        rightSizer->Add(new wxStaticText(imgPanel, wxID_ANY, wxString::FromUTF8("바운딩박스 설정")), 0, wxTOP | wxLEFT | wxRIGHT, 5);
+        
+        // Show bounding boxes checkbox
+        m_showBoundingBoxCheckbox = new wxCheckBox(imgPanel, wxID_ANY, wxString::FromUTF8("바운딩박스 표시"));
+        m_showBoundingBoxCheckbox->SetValue(true); // Default to checked
+        m_showBoundingBoxCheckbox->Bind(wxEVT_CHECKBOX, &MainFrame::OnBoundingBoxDisplayToggle, this);
+        rightSizer->Add(m_showBoundingBoxCheckbox, 0, wxALL, 5);
+        
         // Crop region input section
         rightSizer->Add(new wxStaticText(imgPanel, wxID_ANY, wxString::FromUTF8("자르기 영역")), 0, wxTOP | wxLEFT | wxRIGHT, 5);
         
@@ -134,10 +143,12 @@ private:
     wxTextCtrl* m_cropY;
     wxTextCtrl* m_cropWidth;
     wxTextCtrl* m_cropHeight;
+    wxCheckBox* m_showBoundingBoxCheckbox;
     
     void OnOpenFileButtonClick(wxCommandEvent& event);
     void OnOpenViewerButtonClick(wxCommandEvent& event);
     void OnCropButtonClick(wxCommandEvent& event);
+    void OnBoundingBoxDisplayToggle(wxCommandEvent& event);
     void UpdateImageMetadata(bool isOriginal, cv::Mat& mat);
 };
 
@@ -270,6 +281,13 @@ class MyApp : public wxApp {
         }
     };
     
+void MainFrame::OnBoundingBoxDisplayToggle(wxCommandEvent& event) {
+    bool showBoundingBoxes = m_showBoundingBoxCheckbox->GetValue();
+    if (m_imageWindow) {
+        m_imageWindow->SetBoundingBoxDisplayMode(showBoundingBoxes);
+    }
+}
+
 wxIMPLEMENT_APP(MyApp);
 
 

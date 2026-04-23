@@ -14,7 +14,7 @@ public:
     static cv::Mat GetZoomedROI(const cv::Mat& src, cv::Point center, double zoom, cv::Size outputSize);
 
     // OpenCV Mat to wxBitmap conversion
-    static wxBitmap ConvertMatToBitmap(const cv::Mat& mat);
+    static wxBitmap ColorSpaceToBitmap(const cv::Mat& mat);
     
     // Load image from file path
     static cv::Mat LoadImageFromFile(const std::string& filePath);
@@ -27,5 +27,8 @@ public:
     
     // Bounding box rendering
     static cv::Mat DrawBoundingBoxesOnImage(const cv::Mat& image, const std::vector<BoundingBox>& boxes);
-
+    
+    // Convert image color space (from current format to target format)
+    static cv::Mat ConvertMatColorSpace(const cv::Mat& image, ImageData::ImageFormat currentFormat, ImageData::ImageFormat targetFormat);
+    static wxBitmap ConvertMatToWXBitmap(const cv::Mat& mat);
 };

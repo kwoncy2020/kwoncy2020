@@ -52,7 +52,7 @@ bool ImageProcessor::ValidateCropRegion(const cv::Mat& src, int x, int y, int wi
     return true;
 }
 
-wxBitmap ImageProcessor::ConvertMatToBitmap(const cv::Mat& mat) {
+wxBitmap ImageProcessor::ConvertMatToWXBitmap(const cv::Mat& mat) {
     if (mat.empty()) return wxBitmap();
     
     cv::Mat converted;
@@ -88,4 +88,124 @@ cv::Mat ImageProcessor::DrawBoundingBoxesOnImage(const cv::Mat& image, const std
     }
     
     return result;
+}
+
+cv::Mat ImageProcessor::ConvertMatColorSpace(const cv::Mat& image, ImageData::ImageFormat currentFormat, ImageData::ImageFormat targetFormat) {
+    // If formats are the same, return clone for safety
+    if (currentFormat == targetFormat) {
+        return image.clone();
+    }
+    
+    cv::Mat converted;
+    
+    // Convert from current format to target format
+    switch (currentFormat) {
+        case ImageData::ImageFormat::BGR:
+            switch (targetFormat) {
+                case ImageData::ImageFormat::RGB:
+                    cv::cvtColor(image, converted, cv::COLOR_BGR2RGB);
+                    break;
+                case ImageData::ImageFormat::GRAYSCALE:
+                    cv::cvtColor(image, converted, cv::COLOR_BGR2GRAY);
+                    break;
+                case ImageData::ImageFormat::BGRA:
+                    cv::cvtColor(image, converted, cv::COLOR_BGR2BGRA);
+                    break;
+                case ImageData::ImageFormat::RGBA:
+                    cv::cvtColor(image, converted, cv::COLOR_BGR2RGBA);
+                    break;
+                default:
+                    converted = image.clone();
+                    break;
+            }
+            break;
+            
+        case ImageData::ImageFormat::RGB:
+            switch (targetFormat) {
+                case ImageData::ImageFormat::BGR:
+                    cv::cvtColor(image, converted, cv::COLOR_RGB2BGR);
+                    break;
+                case ImageData::ImageFormat::GRAYSCALE:
+                    cv::cvtColor(image, converted, cv::COLOR_RGB2GRAY);
+                    break;
+                case ImageData::ImageFormat::RGBA:
+                    cv::cvtColor(image, converted, cv::COLOR_RGB2RGBA);
+                    break;
+                case ImageData::ImageFormat::BGRA:
+                    cv::cvtColor(image, converted, cv::COLOR_RGB2BGRA);
+                    break;
+                default:
+                    converted = image.clone();
+                    break;
+            }
+            break;
+            
+        case ImageData::ImageFormat::GRAYSCALE:
+            switch (targetFormat) {
+                case ImageData::ImageFormat::BGR:
+                    cv::cvtColor(image, converted, cv::COLOR_GRAY2BGR);
+                    break;
+                case ImageData::ImageFormat::RGB:
+                    cv::cvtColor(image, converted, cv::COLOR_GRAY2RGB);
+                    break;
+                case ImageData::ImageFormat::BGRA:
+                    cv::cvtColor(image, converted, cv::COLOR_GRAY2BGRA);
+                    break;
+                case ImageData::ImageFormat::RGBA:
+                    cv::cvtColor(image, converted, cv::COLOR_GRAY2RGBA);
+                    break;
+                default:
+                    converted = image.clone();
+                    break;
+            }
+            break;
+            
+        case ImageData::ImageFormat::BGRA:
+            switch (targetFormat) {
+                case ImageData::ImageFormat::BGR:
+                    cv::cvtColor(image, converted, cv::COLOR_BGRA2BGR);
+                    break;
+                case ImageData::ImageFormat::RGB:
+                    cv::cvtColor(image, converted, cv::COLOR_BGRA2RGB);
+                    break;
+                case ImageData::ImageFormat::GRAYSCALE:
+                    cv::cvtColor(image, converted, cv::COLOR_BGRA2GRAY);
+                    break;
+                case ImageData::ImageFormat::RGBA:
+                    // BGRA to RGBA requires channel reordering
+                    cv::cvtColor(image, converted, cv::COLOR_BGRA2RGBA);
+                    break;
+                default:
+                    converted = image.clone();
+                    break;
+            }
+            break;
+            
+        case ImageData::ImageFormat::RGBA:
+            switch (targetFormat) {
+                case ImageData::ImageFormat::BGR:
+                    cv::cvtColor(image, converted, cv::COLOR_RGBA2BGR);
+                    break;
+                case ImageData::ImageFormat::RGB:
+                    cv::cvtColor(image, converted, cv::COLOR_RGBA2RGB);
+                    break;
+                case ImageData::ImageFormat::GRAYSCALE:
+                    cv::cvtColor(image, converted, cv::COLOR_RGBA2GRAY);
+                    break;
+                case ImageData::ImageFormat::BGRA:
+                    // RGBA to BGRA requires channel reordering
+                    cv::cvtColor(image, converted, cv::COLOR_RGBA2BGRA);
+                    break;
+                default:
+                    converted = image.clone();
+                    break;
+            }
+            break;
+            
+        default:
+            converted = image.clone();
+            break;
+    }
+    
+    return converted;
 }

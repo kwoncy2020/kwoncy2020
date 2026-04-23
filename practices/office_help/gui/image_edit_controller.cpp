@@ -2,7 +2,6 @@ module;
 
 #include <opencv2/opencv.hpp>
 #include <filesystem>
-#include <algorithm>
 #include <wx/wx.h>
 #include <wx/arrstr.h>
 
@@ -99,18 +98,39 @@ cv::Mat ImageEditController::GetImage(const std::string& id) {
     return imageData->GetImage();
 }
 
-cv::Mat ImageEditController::GetDisplayImage(const std::string& id) {
+
+
+cv::Mat ImageEditController::GetDisplayImage(const std::string& id, bool showBoundingBoxes, ImageData::ImageFormat targetFormat) {
     ImageData* imageData = GetImageData(id);
     if (!imageData) {
         return cv::Mat();
     }
     
-    // Use ImageProcessor to render bounding boxes on the image
     cv::Mat originalImage = imageData->GetImage();
-    std::vector<BoundingBox> boxes = imageData->GetBoundingBoxes();
+    ImageData::ImageFormat currentFormatEnum = imageData->GetImageFormat();
     
-    return ImageProcessor::DrawBoundingBoxesOnImage(originalImage, boxes);
+    if (showBoundingBoxes) {
+        std::vector<BoundingBox> boxes = imageData->GetBoundingBoxes();
+        // Draw bounding boxes and convert for display
+        cv::Mat resultImage = ImageProcessor::DrawBoundingBoxesOnImage(originalImage, boxes);
+        return ImageProcessor::ConvertMatColorSpace(resultImage, currentFormatEnum, targetFormat);
+    } else {
+        // No bounding boxes, just convert original image for display
+        return ImageProcessor::ConvertMatColorSpace(originalImage, currentFormatEnum, targetFormat);
+    }
 }
+
+cv::Mat ImageEditController::GetDisplayBoxedImage(const std::string& id, cv::Mat& convertedMat){
+    // Get Boxed Display Image without convert
+    ImageData* imageData = GetImageData(id);
+    if (!imageData) {
+        return cv::Mat();
+    }
+    // copied image will be returened
+    return ImageProcessor::DrawBoundingBoxesOnImage(convertedMat, imageData->GetBoundingBoxes());
+}
+
+
 
 std::string ImageEditController::GetImageName(const std::string& id) const {
     if (!IsValidRepository()) {
