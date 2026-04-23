@@ -1,0 +1,56 @@
+[
+{
+  "directory": "C:/Users/kwoncy/Documents/dev/mygit/practices/office_help/gui/build",
+  "command": "C:\\PROGRA~2\\MICROS~2\\2022\\BUILDT~1\\VC\\Tools\\MSVC\\1442~1.344\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DUNICODE -D_UNICODE -external:IC:\\vcpkg\\installed\\x64-windows\\lib\\mswu -external:IC:\\vcpkg\\installed\\x64-windows\\include -external:IC:\\vcpkg\\installed\\x64-windows\\include\\opencv4 -external:W0 /DWIN32 /D_WINDOWS /EHsc /Ob0 /Od /RTC1 -std:c++20 -MDd -Zi @CMakeFiles\\gui.dir\\image_processor.cpp.obj.modmap /FoCMakeFiles\\gui.dir\\image_processor.cpp.obj /FdCMakeFiles\\gui.dir\\ /FS -c C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\image_processor.cpp",
+  "file": "C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\image_processor.cpp",
+  "output": "CMakeFiles\\gui.dir\\image_processor.cpp.obj"
+},
+{
+  "directory": "C:/Users/kwoncy/Documents/dev/mygit/practices/office_help/gui/build",
+  "command": "C:\\PROGRA~2\\MICROS~2\\2022\\BUILDT~1\\VC\\Tools\\MSVC\\1442~1.344\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DUNICODE -D_UNICODE -external:IC:\\vcpkg\\installed\\x64-windows\\lib\\mswu -external:IC:\\vcpkg\\installed\\x64-windows\\include -external:IC:\\vcpkg\\installed\\x64-windows\\include\\opencv4 -external:W0 /DWIN32 /D_WINDOWS /EHsc /Ob0 /Od /RTC1 -std:c++20 -MDd -Zi @CMakeFiles\\gui.dir\\image_viewer_frame.cpp.obj.modmap /FoCMakeFiles\\gui.dir\\image_viewer_frame.cpp.obj /FdCMakeFiles\\gui.dir\\ /FS -c C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\image_viewer_frame.cpp",
+  "file": "C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\image_viewer_frame.cpp",
+  "output": "CMakeFiles\\gui.dir\\image_viewer_frame.cpp.obj"
+},
+{
+  "directory": "C:/Users/kwoncy/Documents/dev/mygit/practices/office_help/gui/build",
+  "command": "C:\\PROGRA~2\\MICROS~2\\2022\\BUILDT~1\\VC\\Tools\\MSVC\\1442~1.344\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DUNICODE -D_UNICODE -external:IC:\\vcpkg\\installed\\x64-windows\\lib\\mswu -external:IC:\\vcpkg\\installed\\x64-windows\\include -external:IC:\\vcpkg\\installed\\x64-windows\\include\\opencv4 -external:W0 /DWIN32 /D_WINDOWS /EHsc /Ob0 /Od /RTC1 -std:c++20 -MDd -Zi @CMakeFiles\\gui.dir\\zoom_frame.cpp.obj.modmap /FoCMakeFiles\\gui.dir\\zoom_frame.cpp.obj /FdCMakeFiles\\gui.dir\\ /FS -c C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\zoom_frame.cpp",
+  "file": "C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\zoom_frame.cpp",
+  "output": "CMakeFiles\\gui.dir\\zoom_frame.cpp.obj"
+},
+{
+  "directory": "C:/Users/kwoncy/Documents/dev/mygit/practices/office_help/gui/build",
+  "command": "C:\\PROGRA~2\\MICROS~2\\2022\\BUILDT~1\\VC\\Tools\\MSVC\\1442~1.344\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DUNICODE -D_UNICODE -external:IC:\\vcpkg\\installed\\x64-windows\\lib\\mswu -external:IC:\\vcpkg\\installed\\x64-windows\\include -external:IC:\\vcpkg\\installed\\x64-windows\\include\\opencv4 -external:W0 /DWIN32 /D_WINDOWS /EHsc /Ob0 /Od /RTC1 -std:c++20 -MDd -Zi @CMakeFiles\\gui.dir\\window_factory.cpp.obj.modmap /FoCMakeFiles\\gui.dir\\window_factory.cpp.obj /FdCMakeFiles\\gui.dir\\ /FS -c C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\window_factory.cpp",
+  "file": "C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\window_factory.cpp",
+  "output": "CMakeFiles\\gui.dir\\window_factory.cpp.obj"
+},
+{
+  "directory": "C:/Users/kwoncy/Documents/dev/mygit/practices/office_help/gui/build",
+  "command": "C:\\PROGRA~2\\MICROS~2\\2022\\BUILDT~1\\VC\\Tools\\MSVC\\1442~1.344\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DUNICODE -D_UNICODE -external:IC:\\vcpkg\\installed\\x64-windows\\lib\\mswu -external:IC:\\vcpkg\\installed\\x64-windows\\include -external:IC:\\vcpkg\\installed\\x64-windows\\include\\opencv4 -external:W0 /DWIN32 /D_WINDOWS /EHsc /Ob0 /Od /RTC1 -std:c++20 -MDd -Zi @CMakeFiles\\gui.dir\\image_edit_gui.cpp.obj.modmap /FoCMakeFiles\\gui.dir\\image_edit_gui.cpp.obj /FdCMakeFiles\\gui.dir\\ /FS -c C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\image_edit_gui.cpp",
+  "file": "C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\image_edit_gui.cpp",
+  "output": "CMakeFiles\\gui.dir\\image_edit_gui.cpp.obj"
+},
+{
+  "directory": "C:/Users/kwoncy/Documents/dev/mygit/practices/office_help/gui/build",
+  "command": "C:\\PROGRA~2\\MICROS~2\\2022\\BUILDT~1\\VC\\Tools\\MSVC\\1442~1.344\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DUNICODE -D_UNICODE -external:IC:\\vcpkg\\installed\\x64-windows\\lib\\mswu -external:IC:\\vcpkg\\installed\\x64-windows\\include -external:IC:\\vcpkg\\installed\\x64-windows\\include\\opencv4 -external:W0 /DWIN32 /D_WINDOWS /EHsc /Ob0 /Od /RTC1 -std:c++20 -MDd -Zi @CMakeFiles\\gui.dir\\image_processor.cppm.obj.modmap /FoCMakeFiles\\gui.dir\\image_processor.cppm.obj /FdCMakeFiles\\gui.dir\\ /FS -c C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\image_processor.cppm",
+  "file": "C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\image_processor.cppm",
+  "output": "CMakeFiles\\gui.dir\\image_processor.cppm.obj"
+},
+{
+  "directory": "C:/Users/kwoncy/Documents/dev/mygit/practices/office_help/gui/build",
+  "command": "C:\\PROGRA~2\\MICROS~2\\2022\\BUILDT~1\\VC\\Tools\\MSVC\\1442~1.344\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DUNICODE -D_UNICODE -external:IC:\\vcpkg\\installed\\x64-windows\\lib\\mswu -external:IC:\\vcpkg\\installed\\x64-windows\\include -external:IC:\\vcpkg\\installed\\x64-windows\\include\\opencv4 -external:W0 /DWIN32 /D_WINDOWS /EHsc /Ob0 /Od /RTC1 -std:c++20 -MDd -Zi @CMakeFiles\\gui.dir\\image_viewer_frame.cppm.obj.modmap /FoCMakeFiles\\gui.dir\\image_viewer_frame.cppm.obj /FdCMakeFiles\\gui.dir\\ /FS -c C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\image_viewer_frame.cppm",
+  "file": "C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\image_viewer_frame.cppm",
+  "output": "CMakeFiles\\gui.dir\\image_viewer_frame.cppm.obj"
+},
+{
+  "directory": "C:/Users/kwoncy/Documents/dev/mygit/practices/office_help/gui/build",
+  "command": "C:\\PROGRA~2\\MICROS~2\\2022\\BUILDT~1\\VC\\Tools\\MSVC\\1442~1.344\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DUNICODE -D_UNICODE -external:IC:\\vcpkg\\installed\\x64-windows\\lib\\mswu -external:IC:\\vcpkg\\installed\\x64-windows\\include -external:IC:\\vcpkg\\installed\\x64-windows\\include\\opencv4 -external:W0 /DWIN32 /D_WINDOWS /EHsc /Ob0 /Od /RTC1 -std:c++20 -MDd -Zi @CMakeFiles\\gui.dir\\zoom_frame.cppm.obj.modmap /FoCMakeFiles\\gui.dir\\zoom_frame.cppm.obj /FdCMakeFiles\\gui.dir\\ /FS -c C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\zoom_frame.cppm",
+  "file": "C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\zoom_frame.cppm",
+  "output": "CMakeFiles\\gui.dir\\zoom_frame.cppm.obj"
+},
+{
+  "directory": "C:/Users/kwoncy/Documents/dev/mygit/practices/office_help/gui/build",
+  "command": "C:\\PROGRA~2\\MICROS~2\\2022\\BUILDT~1\\VC\\Tools\\MSVC\\1442~1.344\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DUNICODE -D_UNICODE -external:IC:\\vcpkg\\installed\\x64-windows\\lib\\mswu -external:IC:\\vcpkg\\installed\\x64-windows\\include -external:IC:\\vcpkg\\installed\\x64-windows\\include\\opencv4 -external:W0 /DWIN32 /D_WINDOWS /EHsc /Ob0 /Od /RTC1 -std:c++20 -MDd -Zi @CMakeFiles\\gui.dir\\window_factory.cppm.obj.modmap /FoCMakeFiles\\gui.dir\\window_factory.cppm.obj /FdCMakeFiles\\gui.dir\\ /FS -c C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\window_factory.cppm",
+  "file": "C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\window_factory.cppm",
+  "output": "CMakeFiles\\gui.dir\\window_factory.cppm.obj"
+}
+]

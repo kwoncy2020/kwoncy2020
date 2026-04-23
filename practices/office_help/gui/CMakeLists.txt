@@ -25,16 +25,29 @@ add_executable(gui WIN32)
 target_sources(gui 
     PRIVATE
         image_processor.cpp
+        image_data.cpp
+        image_data_repository.cpp
+        image_edit_controller.cpp
+        controller_factory.cpp
+        # image_data_selector.cpp
         image_viewer_frame.cpp
         zoom_frame.cpp
         window_factory.cpp
+        scrolled_image_window.cpp
         image_edit_gui.cpp
     PUBLIC
     FILE_SET CXX_MODULES FILES 
         image_processor.cppm
+        image_data.cppm
+        image_data_repository.cppm
+        image_edit_controller.cppm
+        controller_factory.cppm
+        utils.cppm
+        # image_data_selector.cppm
         image_viewer_frame.cppm
         zoom_frame.cppm
         window_factory.cppm
+        scrolled_image_window.cppm
 )
 
 

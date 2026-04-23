@@ -1,0 +1,91 @@
+module;
+#include <opencv2/opencv.hpp>
+#include <vector>
+#include <chrono>
+#include <iomanip>
+#include <sstream>
+
+export module ImageData;
+
+// Forward declaration
+export struct BoundingBox {
+    int x, y, width, height;
+    
+    BoundingBox() : x(0), y(0), width(0), height(0) {}
+    BoundingBox(int x_, int y_, int w_, int h_) : x(x_), y(y_), width(w_), height(h_) {}
+    
+    bool Contains(int px, int py) const {
+        return px >= x && px <= x + width && py >= y && py <= y + height;
+    }
+};
+
+export class ImageData {
+public:
+    // Custom image format flags (library-agnostic)
+    enum class ImageFormat {
+        UNKNOWN = 0,
+        GRAYSCALE = 1,
+        RGB = 2,
+        BGR = 3,
+        RGBA = 4,
+        BGRA = 5
+    };
+    
+    // Constructors
+    ImageData(const cv::Mat& image, ImageFormat format);
+    ImageData(const cv::Mat& image, const std::string& filename, ImageFormat format);
+    
+    // Image operations
+    void SetImage(const cv::Mat& image);
+    cv::Mat GetImage() const { return m_image; }
+    bool HasImage() const { return !m_image.empty(); }
+    
+    // Metadata operations
+    void SetFilename(const std::string& filename) { m_filename = filename; }
+    std::string GetFilename() const { return m_filename; }
+    void SetCreationTime(const std::string& time) { m_creationTime = time; }
+    std::string GetCreationTime() const { return m_creationTime; }
+    void SetMetadata(const std::string& filename, const std::string& timestamp);
+    
+    // Image metadata operations
+    int GetChannels() const { return m_channels; }
+    int GetDepth() const { return m_depth; }
+    size_t GetImageSize() const { return m_imageSize; }
+    void UpdateImageMetadata();
+    void SetImageFormat(ImageFormat format) { m_imageFormatEnum = format; }
+    ImageFormat GetImageFormat() const { return m_imageFormatEnum; }
+    std::string GetImageFormatString() const;
+    // Bounding box operations
+    void AddBoundingBox(const BoundingBox& box);
+    void RemoveBoundingBox(int index);
+    void RemoveBoundingBoxAt(int x, int y);
+    int FindBoundingBoxAt(int x, int y) const;
+    std::vector<BoundingBox> GetBoundingBoxes() const { return m_boundingBoxes; }
+    void ClearBoundingBoxes();
+    
+    // Bounding box utilities (static)
+    bool IsPointInBoundingBox(const BoundingBox& box, int x, int y);
+    
+        
+    // Image properties
+    int GetWidth() const { return m_image.cols; }
+    int GetHeight() const { return m_image.rows; }
+    cv::Size GetSize() const { return m_image.size(); }
+    
+private:
+    cv::Mat m_image;           // Original image
+    std::string m_filename;    // Original filename
+    std::string m_creationTime; // File creation/modification time
+    std::vector<BoundingBox> m_boundingBoxes;
+    
+    // Image metadata
+    int m_channels;            // Number of channels (1=grayscale, 3=RGB, 4=RGBA)
+    int m_depth;               // Bit depth (CV_8U, CV_16U, etc.)
+    size_t m_imageSize;        // Total image size in bytes
+    ImageFormat m_imageFormatEnum; // Custom image format (library-agnostic)
+    std::string m_imageFormat; // Image format description
+    
+    // Helper methods
+    std::string GetCurrentTimestamp() const;
+    std::string GetDepthString(int depth) const;
+};
