@@ -391,7 +391,7 @@ void ScrolledImageWindow::ConvertAxisToImageAxis(int ClientX, int ClientY, int& 
 
 // Controller injection methods
 void ScrolledImageWindow::SetBoundingBoxDisplayMode(bool showBoundingBoxes) {
-    m_showBoundingBoxes = !showBoundingBoxes;
+    m_showBoundingBoxes = showBoundingBoxes;
     Refresh();
 }
 
