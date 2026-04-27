@@ -3,6 +3,7 @@ module;
 #include <wx/bitmap.h>
 #include <opencv2/opencv.hpp>
 #include <vector>
+#include <wx/rawbmp.h>
 
 module ImageProcessor;
 
@@ -70,25 +71,153 @@ wxBitmap ImageProcessor::ConvertMatToWXBitmap(const cv::Mat& mat) {
     return wxBitmap(image);
 }
 
-cv::Mat ImageProcessor::DrawBoundingBoxesOnImage(const cv::Mat& image, const std::vector<BoundingBox>& boxes) {
+cv::Mat ImageProcessor::DrawBoundingBoxesOnImage(const cv::Mat& image, const std::vector<BoundingBox>& boxes, int selectedIndex) {
     cv::Mat result = image.clone();
     
-    for (const auto& box : boxes) {
+    for (size_t i = 0; i < boxes.size(); ++i) {
+        const auto& box = boxes[i];
         // Validate bounding box coordinates
         if (box.x < 0 || box.y < 0 || box.x + box.width > image.cols || 
             box.y + box.height > image.rows || box.width <= 0 || box.height <= 0) {
             continue; // Skip invalid boxes
         }
         
-        // Draw green rectangle for bounding box
+        // Choose color and thickness based on selection
+        cv::Scalar color;
+        int thickness;
+        if (selectedIndex >= 0 && i == static_cast<size_t>(selectedIndex)) {
+            // Selected box - red color, thicker line
+            color = cv::Scalar(0, 0, 255); // Red (BGR format)
+            thickness = 3; // 3px thickness for selected box
+        } else {
+            // Normal box - green color, normal line
+            color = cv::Scalar(0, 255, 0); // Green (BGR format)
+            thickness = 2; // 2px thickness for normal box
+        }
+        
         cv::rectangle(result, 
                      cv::Point(box.x, box.y), 
                      cv::Point(box.x + box.width, box.y + box.height), 
-                     cv::Scalar(0, 255, 0), 2); // Green color, 2px thickness
+                     color, thickness);
     }
     
     return result;
 }
+
+
+
+// Segmentation functionality implementation
+cv::Mat ImageProcessor::InitializeSegmentationMask(const cv::Mat& image) {
+    if (image.empty()) {
+        return cv::Mat();
+    }
+    
+    // Create a black mask (all zeros) - same size as input image
+    cv::Mat mask = cv::Mat::zeros(image.size(), CV_8UC1);
+    return mask;
+}
+
+void ImageProcessor::SetWXBitmapPixelAt(wxBitmap& bmp, int x, int y, unsigned char r, unsigned char g, unsigned char b) {
+    wxNativePixelData data(bmp);
+    if (!data) return;
+
+    wxNativePixelData::Iterator p(data);
+    
+    // OpenCV의 at(y, x)처럼 특정 좌표로 바로 이동
+    p.MoveTo(data, x, y); 
+
+    // 해당 위치의 픽셀 수정
+    p.Red()   = r;
+    p.Green() = g;
+    p.Blue()  = b;
+    
+    return;
+}
+
+void ImageProcessor::UnSetWXBitmapPixelAt(wxBitmap& bmpOut, wxBitmap& bmpOrig, int x, int y) {
+    wxNativePixelData dataOut(bmpOut);
+    wxNativePixelData dataOrig(bmpOrig);
+    if (!dataOut || !dataOrig) return;
+
+    wxNativePixelData::Iterator pOut(dataOut);
+    wxNativePixelData::Iterator pOrig(dataOrig);
+    
+    // OpenCV의 at(y, x)처럼 특정 좌표로 바로 이동
+    pOut.MoveTo(dataOut, x, y); 
+    pOrig.MoveTo(dataOrig, x, y);
+
+    // 해당 위치의 픽셀 수정
+    pOut.Red()   = pOrig.Red();
+    pOut.Green() = pOrig.Green();
+    pOut.Blue()  = pOrig.Blue();
+    
+    return;
+}
+
+// should be recheck.
+cv::Mat ImageProcessor::PerformPixelSegmentation(const cv::Mat& image, const cv::Mat& currentMask, int x, int y) {
+    if (image.empty() || currentMask.empty()) {
+        return cv::Mat();
+    }
+    
+    // Check bounds
+    if (x < 0 || y < 0 || x >= image.cols || y >= image.rows) {
+        return currentMask.clone();
+    }
+    
+    cv::Mat newMask = currentMask.clone();
+    
+    // Simple flood fill segmentation starting from the clicked pixel
+    cv::Point seed(x, y);
+    cv::Scalar newVal(255); // White for segmented area
+    
+    // Get the color at the clicked pixel
+    cv::Vec3b pixelColor = image.at<cv::Vec3b>(y, x);
+    cv::Scalar seedColor(pixelColor[0], pixelColor[1], pixelColor[2]);
+    
+    // Define color tolerance for segmentation (can be adjusted)
+    cv::Scalar lowerDiff(30, 30, 30);
+    cv::Scalar upperDiff(30, 30, 30);
+    
+    // Perform flood fill
+    cv::floodFill(newMask, seed, newVal, 0, lowerDiff, upperDiff, cv::FLOODFILL_FIXED_RANGE);
+    
+    return newMask;
+}
+
+// TODO: should be checked.
+cv::Mat ImageProcessor::ApplySegmentationOverlay(const cv::Mat& image, const cv::Mat& mask, ImageData::ImageFormat inputImageFormat) {
+    if (image.empty() || mask.empty()) {
+        return image.clone();
+    }
+    
+    cv::Mat result = image.clone();
+    int c1,c2,c3;
+    // Currently, same green tint will be applied to all format
+    if (inputImageFormat == ImageData::ImageFormat::BGR) {
+        c1 = 0; c2 = 255; c3 = 0;
+    } else {
+        c1 = 0; c2 = 255; c3 = 0;
+    }
+
+    // Apply colored overlay to segmented areas
+    for (int y = 0; y < result.rows; y++) {
+        for (int x = 0; x < result.cols; x++) {
+            if (mask.at<uchar>(y, x) > 0) {
+                // Apply semi-transparent colored overlay
+                cv::Vec3b& pixel = result.at<cv::Vec3b>(y, x);
+                pixel[0] = (pixel[0] * 0.5 + c1 * 0.5); // Blue tint
+                pixel[1] = (pixel[1] * 0.5 + c2 * 0.5); // Green tint
+                pixel[2] = (pixel[2] * 0.5 + c3 * 0.5); // Red tint
+            }
+        }
+    }
+    
+    return result;
+}
+
+
+
 
 cv::Mat ImageProcessor::ConvertMatColorSpace(const cv::Mat& image, ImageData::ImageFormat currentFormat, ImageData::ImageFormat targetFormat) {
     // If formats are the same, return clone for safety

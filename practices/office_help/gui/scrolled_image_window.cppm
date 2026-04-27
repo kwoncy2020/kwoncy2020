@@ -6,15 +6,19 @@ module;
 #include <vector>
 
 export module ScrolledImageWindow;
-import ImageProcessor;
-import ImageData;
+// import ImageProcessor;
+import Utils;
 import ImageEditController;
+import ImageData;
 
-export class ScrolledImageWindow : public wxScrolledWindow {
+export class ScrolledImageWindow : public wxScrolledWindow, public IDataObserver {
 public:
     ScrolledImageWindow(wxWindow* parent, wxWindowID id = wxID_ANY, 
                        const wxPoint& pos = wxDefaultPosition, 
-                       const wxSize& size = wxDefaultSize);
+                       const wxSize& size = wxDefaultSize
+                       );
+    // bug. is this method required?
+    // virtual ~ScrolledImageWindow();
     
     // Controller injection
     void SetController(ImageEditController* controller);
@@ -24,14 +28,32 @@ public:
     void ClearImage();
     
     // Multi-instance ImageData management
-    std::string CreateNewImageData(const cv::Mat& image, const std::string& name = "");
+    std::string CreateNewImageData(const cv::Mat& image, const std::string& name = "", const std::string& imageFileName = "", ImageData::ImageFormat format = ImageData::ImageFormat::BGR);
     void SetImageDataById(const std::string& id);
     std::string GetCurrentImageDataId() const;
     std::vector<std::string> GetAvailableImageDataIds() const;
-    
+
+    // IDataObserver implementation
+    void OnDataChanged(const std::string& imageId, DataChangeType changeType, ObserverSenderType observerSenderType, bool notifyToAll) override;
+    ObserverSenderType GetObserverSenderType() override {return ObserverSenderType::ScrollImageWindow;};
+
     // Bounding box display control
     void SetBoundingBoxDisplayMode(bool showBoundingBoxes);
     bool GetBoundingBoxDisplayMode() const;
+    
+    // Segmentation mode control
+    cv::Mat InitializeSegmentationMask(const cv::Mat& mask);
+    void SetSegmentationMode(bool enable);
+    bool GetSegmentationMode() const;
+    void ClearSegmentation();
+
+    // Segmentation functionality
+    void SetWXBitmapPixelAt(wxBitmap& bmp, int x, int y);
+    void UnSetWXBitmapPixelAt(wxBitmap& bmpOut, wxBitmap& bmpOrig, int x, int y);
+    void ApplyPixelOverlay(int x, int y);
+    void PerformMaskSegmentation(int x, int y);
+    void PerformPixelSegmentation(int imageX, int imageY, bool reaquestProcessor);
+    cv::Mat ApplySegmentationOverlay(const cv::Mat& image, const cv::Mat& mask);
 
 private:
     // Image data
@@ -56,6 +78,15 @@ private:
     wxPoint m_currentBoxScreenPos;
     bool m_showBoundingBoxes;
     
+    // Segmentation functionality
+    unsigned char m_pixelWeightR=40;
+    unsigned char m_pixelWeightG=127;
+    unsigned char m_pixelWeightB=0;
+    bool m_isSegmentationMode;
+    wxBitmap m_segmentationImageRGB_Bitmap; // Copy of original for segmentation work
+    cv::Mat m_segmentationMask;   // Binary mask for segmented areas
+    bool m_showSegmentedImage;
+
     // Pre-calculated values for performance (updated only on size changes)
     double m_scrollRatioX;
     double m_scrollRatioY;
@@ -72,6 +103,8 @@ private:
     wxBitmap m_cachedDisplayBitmap;
     bool m_isCacheValid;
     ImageEditController* m_controller;
+
+
     
     void OnSize(wxSizeEvent& event);
     void OnPaint(wxPaintEvent& event);
@@ -86,4 +119,7 @@ private:
     void DrawBoundingBoxes(wxPaintDC& dc);
     void ConvertAxisToImageAxis(int screenX, int screenY, int& imageX, int& imageY);
     wxPoint ConvertScreenToImage(const wxPoint& screenPos) const;
+
+
+    
 };

@@ -6,18 +6,8 @@ module;
 #include <sstream>
 
 export module ImageData;
+import Utils;
 
-// Forward declaration
-export struct BoundingBox {
-    int x, y, width, height;
-    
-    BoundingBox() : x(0), y(0), width(0), height(0) {}
-    BoundingBox(int x_, int y_, int w_, int h_) : x(x_), y(y_), width(w_), height(h_) {}
-    
-    bool Contains(int px, int py) const {
-        return px >= x && px <= x + width && py >= y && py <= y + height;
-    }
-};
 
 export class ImageData {
 public:
@@ -31,6 +21,26 @@ public:
         BGRA = 5
     };
     
+    enum class SourceType {
+        STATIC_FILE,
+        VIDEO_FRAME,
+        WINDOW_CAPTURE,
+        MEMORY_BUFFER,
+        CAMERA_STREAM
+    };
+
+
+    struct SourceInfo{
+        SourceType sourceType;
+        std::string sourcePath;
+        void* handle;
+        int currentIndex;
+        int totalElements;
+        double fps;
+        bool isDynamic;
+    }
+    
+
     // Constructors
     ImageData(const cv::Mat& image, ImageFormat format);
     ImageData(const cv::Mat& image, const std::string& filename, ImageFormat format);
@@ -59,8 +69,10 @@ public:
     void AddBoundingBox(const BoundingBox& box);
     void RemoveBoundingBox(int index);
     void RemoveBoundingBoxAt(int x, int y);
+    void ModifyBoundingBox(int index, const BoundingBox& box);
     int FindBoundingBoxAt(int x, int y) const;
-    std::vector<BoundingBox> GetBoundingBoxes() const { return m_boundingBoxes; }
+    std::vector<BoundingBox>& GetBoundingBoxes(const std::string& id) { return m_boundingBoxes; }
+    BoundingBox GetBoundingBox(int index);
     void ClearBoundingBoxes();
     
     // Bounding box utilities (static)

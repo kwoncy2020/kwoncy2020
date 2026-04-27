@@ -3,6 +3,7 @@
 #include <wx/notebook.h>
 #include <wx/scrolwin.h>
 #include <wx/filename.h>
+#include <wx/spinctrl.h>
 #include <opencv2/opencv.hpp>
 import WindowFactory;
 import ImageProcessor;
@@ -11,114 +12,88 @@ import ImageDataRepository;
 import ScrolledImageWindow;
 import ControllerFactory;
 import ImageData;
+import ImageInfoPanel;
+import BoundingBoxControlPanel;
 
-class MainFrame : public wxFrame {
+class MainFrame : public wxFrame, public IDataObserver{
 public:
-    MainFrame() : wxFrame(NULL, wxID_ANY, "Image Processing Tool", wxDefaultPosition, wxSize(800, 600)),
+    MainFrame() : wxFrame(NULL, wxID_ANY, "Office Help", wxDefaultPosition, wxSize(800, 600)),
                   m_imageOrigWidth(0), m_imageOrigHeight(0), m_controller(ControllerFactory::CreateController()) {
-        
+        m_controller->AddDataObserver(this);
+
         wxPrintf("MainFrame created with title: %s\n", GetTitle().ToStdString().c_str());
         
         // Create main sizer for the frame
-        wxBoxSizer* mainSizer = new wxBoxSizer(wxVERTICAL);
+        wxBoxSizer* mainSizerV = new wxBoxSizer(wxVERTICAL);
         
         wxNotebook* notebook = new wxNotebook(this, wxID_ANY);
-        mainSizer->Add(notebook, 1, wxEXPAND | wxALL, 5);
-        SetSizer(mainSizer);
+        mainSizerV->Add(notebook, 1, wxEXPAND | wxALL, 5);
+
 
         // 탭 1: 시스템 설정
         wxPanel* settingPanel = new wxPanel(notebook);
         wxBoxSizer* settingSizer = new wxBoxSizer(wxVERTICAL);
         
         wxStaticText* settingText = new wxStaticText(settingPanel, wxID_ANY, wxString::FromUTF8("여기에 설정을 배치하세요."));
-        settingSizer->Add(settingText, 0, wxALL, 20);
+        settingSizer->Add(settingText, 1, wxALL, 20);
         settingPanel->SetSizer(settingSizer);
 
-        // 탭 2: 이미지 분석
-        wxPanel* imgPanel = new wxPanel(notebook);
-        wxBoxSizer* imgSizer = new wxBoxSizer(wxHORIZONTAL); // Horizontal main layout
-        
+        // 탭 2: 이미지 분석 - 원래 레이아웃 복원
+        wxPanel* imgAndCtlPanel = new wxPanel(notebook);
+        wxBoxSizer* imgAndCtlPanelSizerH = new wxBoxSizer(wxHORIZONTAL);
+        imgAndCtlPanel->SetSizer(imgAndCtlPanelSizerH);
+
+        // wxPanel* scrollWindowOuterPanel = new wxPanel(imgAndCtlPanel);
+        // wxBoxSizer* scrollWindowOuterSizerH = new wxBoxSizer(wxHORIZONTAL);
+        // scrollWindowOuterPanel->SetSizer(scrollWindowOuterSizerH);
+
         // Left side: Image display
-        m_imageWindow = new ScrolledImageWindow(imgPanel, wxID_ANY);
+        // m_imageWindow = new ScrolledImageWindow(scrollWindowOuterPanel, wxID_ANY);
+        m_imageWindow = new ScrolledImageWindow(imgAndCtlPanel, wxID_ANY);
         m_imageWindow->SetController(m_controller);
-        imgSizer->Add(m_imageWindow, 1, wxEXPAND | wxALL, 10);
+        m_imageWindow->SetMinSize(wxSize(400, -1));
+        // wxBoxSizer* imageScrollWindowInnerSizerH = new wxBoxSizer(wxHORIZONTAL);
+        // m_imageWindow->SetSizer(imageScrollWindowInnerSizerH);
+        // scrollWindowOuterSizerH->Add(m_imageWindow, 1, wxEXPAND | wxALL, 5);
+        // imgAndCtlPanelSizerH->Add(scrollWindowOuterSizerH, 1, wxEXPAND | wxALL, 5);
+        imgAndCtlPanelSizerH->Add(m_imageWindow, 3, wxEXPAND | wxALL, 5);
         
         // Right side: Controls and information
-        wxBoxSizer* rightSizer = new wxBoxSizer(wxVERTICAL);
         
-        // Button panel
-        wxBoxSizer* buttonSizer = new wxBoxSizer(wxHORIZONTAL);
+        wxPanel* ctlAndBoxPanel = new wxPanel(imgAndCtlPanel);
+        wxBoxSizer* ctlAndBoxPanelSizerV1 = new wxBoxSizer(wxVERTICAL);
+        ctlAndBoxPanel->SetSizer(ctlAndBoxPanelSizerV1);
         
-        wxButton* openFileBtn = new wxButton(imgPanel, wxID_ANY, wxString::FromUTF8("파일 열기"));
-        openFileBtn->Bind(wxEVT_BUTTON, &MainFrame::OnOpenFileButtonClick, this);
-        buttonSizer->Add(openFileBtn, 0, wxALL, 5);
+        // wxBoxSizer* rightCtlSizerV1 = new wxBoxSizer(wxVERTICAL);
+        // Create and add ImageControlPanel
+        m_imageInfoPanel = new ImageInfoPanel(ctlAndBoxPanel, m_controller);
+        // rightCtlSizerV1->Add(m_imageInfoPanel, 1, wxEXPAND | wxALL, 5);
+        // rightCtlSizerV1->Add(m_imageInfoPanel, 1, wxEXPAND | wxALL, 5);
+        // m_imageInfoPanel->SetSizer(rightCtlSizerV1);
+        // Create and add BoundingBoxControlPanel
+        m_boundingBoxControlPanel = new BoundingBoxControlPanel(ctlAndBoxPanel, m_controller);
+        // rightCtlSizerV1->Add(m_boundingBoxControlPanel, 1, wxEXPAND | wxALL, 5);
+        // m_boundingBoxControlPanel->SetSizer(rightCtlSizerV1);
+        ctlAndBoxPanelSizerV1->Add(m_imageInfoPanel, 1, wxEXPAND | wxALL, 5);
+        ctlAndBoxPanelSizerV1->Add(m_boundingBoxControlPanel, 1, wxEXPAND | wxALL, 5);
         
-        wxButton* openViewerBtn = new wxButton(imgPanel, wxID_ANY, wxString::FromUTF8("레이블 편집 창 열기"));
-        openViewerBtn->Bind(wxEVT_BUTTON, &MainFrame::OnOpenViewerButtonClick, this);
-        buttonSizer->Add(openViewerBtn, 0, wxALL, 5);
-        
-        rightSizer->Add(buttonSizer, 0, wxALL, 5);
-        
-        // Image information panel
-        rightSizer->Add(new wxStaticText(imgPanel, wxID_ANY, wxString::FromUTF8("이미지 정보")), 0, wxTOP | wxLEFT | wxRIGHT, 5);
-        
-        // Image name display
-        m_imageOrigNameText = new wxStaticText(imgPanel, wxID_ANY, wxString::FromUTF8("파일명: 없음"));
-        rightSizer->Add(m_imageOrigNameText, 0, wxALL, 5);
-        
-        // Image size display
-        m_imageOrigSizeText = new wxStaticText(imgPanel, wxID_ANY, wxString::FromUTF8("크기: 없음"));
-        rightSizer->Add(m_imageOrigSizeText, 0, wxALL, 5);
-        
-        // Bounding box display control
-        rightSizer->Add(new wxStaticText(imgPanel, wxID_ANY, wxString::FromUTF8("바운딩박스 설정")), 0, wxTOP | wxLEFT | wxRIGHT, 5);
-        
-        // Show bounding boxes checkbox
-        m_showBoundingBoxCheckbox = new wxCheckBox(imgPanel, wxID_ANY, wxString::FromUTF8("바운딩박스 표시"));
-        m_showBoundingBoxCheckbox->SetValue(true); // Default to checked
-        m_showBoundingBoxCheckbox->Bind(wxEVT_CHECKBOX, &MainFrame::OnBoundingBoxDisplayToggle, this);
-        rightSizer->Add(m_showBoundingBoxCheckbox, 0, wxALL, 5);
-        
-        // Crop region input section
-        rightSizer->Add(new wxStaticText(imgPanel, wxID_ANY, wxString::FromUTF8("자르기 영역")), 0, wxTOP | wxLEFT | wxRIGHT, 5);
-        
-        // Crop input fields
-        wxBoxSizer* cropSizer = new wxBoxSizer(wxHORIZONTAL);
-        cropSizer->Add(new wxStaticText(imgPanel, wxID_ANY, wxString::FromUTF8("X:")), 0, wxALIGN_CENTER_VERTICAL | wxALL, 2);
-        m_cropX = new wxTextCtrl(imgPanel, wxID_ANY, "0", wxDefaultPosition, wxSize(50, -1));
-        cropSizer->Add(m_cropX, 0, wxALL, 2);
-        
-        cropSizer->Add(new wxStaticText(imgPanel, wxID_ANY, wxString::FromUTF8("Y:")), 0, wxALIGN_CENTER_VERTICAL | wxALL, 2);
-        m_cropY = new wxTextCtrl(imgPanel, wxID_ANY, "0", wxDefaultPosition, wxSize(50, -1));
-        cropSizer->Add(m_cropY, 0, wxALL, 2);
-        
-        cropSizer->Add(new wxStaticText(imgPanel, wxID_ANY, wxString::FromUTF8("W:")), 0, wxALIGN_CENTER_VERTICAL | wxALL, 2);
-        m_cropWidth = new wxTextCtrl(imgPanel, wxID_ANY, "100", wxDefaultPosition, wxSize(50, -1));
-        cropSizer->Add(m_cropWidth, 0, wxALL, 2);
-        
-        cropSizer->Add(new wxStaticText(imgPanel, wxID_ANY, wxString::FromUTF8("H:")), 0, wxALIGN_CENTER_VERTICAL | wxALL, 2);
-        m_cropHeight = new wxTextCtrl(imgPanel, wxID_ANY, "100", wxDefaultPosition, wxSize(50, -1));
-        cropSizer->Add(m_cropHeight, 0, wxALL, 2);
-        
-        rightSizer->Add(cropSizer, 0, wxALL, 5);
-        
-        // Crop button
-        wxButton* cropBtn = new wxButton(imgPanel, wxID_ANY, wxString::FromUTF8("자르기"));
-        cropBtn->Bind(wxEVT_BUTTON, &MainFrame::OnCropButtonClick, this);
-        rightSizer->Add(cropBtn, 0, wxALL, 5);
-        
-        imgSizer->Add(rightSizer, 0, wxEXPAND | wxALL, 10);
-        
-        imgPanel->SetSizer(imgSizer);
 
-        notebook->AddPage(settingPanel, wxString::FromUTF8("시스템 설정"));
-        notebook->AddPage(imgPanel, wxString::FromUTF8("이미지 분석"));
+        // ctlAndBoxPanelSizerV1->Add(m_boundingBoxControlPanel, 1, wxEXPAND | wxALL, 5);
+        // ctlAndBoxPanelSizerV1->Add(m_imageInfoPanel, 1, wxEXPAND | wxALL, 5);
+        // scrollWindowOuterPanel->SetSizer(scrollWindowOuterSizerH);
+        // imgAndCtlPanelSizerH->Add(scrollWindowOuterPanel, 3, wxEXPAND | wxALL, 5);
         
+        imgAndCtlPanelSizerH->Add(ctlAndBoxPanel, 1, wxEXPAND | wxALL, 5);
+        notebook->AddPage(settingPanel, wxString::FromUTF8("시스템 설정"));
+        notebook->AddPage(imgAndCtlPanel, wxString::FromUTF8("이미지 분석"));
+        SetSizer(mainSizerV);
         // Ensure the layout is updated
         Layout();
     }
 
 private:
+    bool m_isOriginal = true;
+
     cv::Mat m_originalMat;
     cv::Mat m_croppedMat;
     cv::Mat m_currentMat;
@@ -135,96 +110,30 @@ private:
     int m_imageCroppedHeight;
     
     // UI elements for image information and crop
-    wxStaticText* m_imageOrigNameText;
-    wxStaticText* m_imageOrigSizeText;
-    wxStaticText* m_imageCroppedNameText;
-    wxStaticText* m_imageCroppedSizeText;
-    wxTextCtrl* m_cropX;
-    wxTextCtrl* m_cropY;
-    wxTextCtrl* m_cropWidth;
-    wxTextCtrl* m_cropHeight;
-    wxCheckBox* m_showBoundingBoxCheckbox;
+    ImageInfoPanel* m_imageInfoPanel;
+    BoundingBoxControlPanel* m_boundingBoxControlPanel;
     
-    void OnOpenFileButtonClick(wxCommandEvent& event);
-    void OnOpenViewerButtonClick(wxCommandEvent& event);
+    // should be modified.
+    // void UpdateImageMetadata(bool isOriginal, cv::Mat& mat);
+    void UpdateImageMetadata();
+    
+    
+    // IMainFrameCallbacks should be removed
+    void OnOpenViewerRequest() ;
     void OnCropButtonClick(wxCommandEvent& event);
-    void OnBoundingBoxDisplayToggle(wxCommandEvent& event);
-    void UpdateImageMetadata(bool isOriginal, cv::Mat& mat);
+    void OnCropRequest(int x, int y, int width, int height);
+    
+public:
+    // IDataObserver implementation
+    void OnDataChanged(const std::string& imageId, DataChangeType changeType, ObserverSenderType observerSenderType, bool notifyToAll) override;
+    ObserverSenderType GetObserverSenderType() override {return ObserverSenderType::MainFrame;};
 };
 
-void MainFrame::OnOpenFileButtonClick(wxCommandEvent& event) {
-    wxFileDialog openFileDialog(this, wxString::FromUTF8("이미지 파일 열기"), "", "",
-                               "Image files (*.jpg;*.jpeg;*.png;*.bmp;*.tiff)|*.jpg;*.jpeg;*.png;*.bmp;*.tiff",
-                               wxFD_OPEN | wxFD_FILE_MUST_EXIST);
-    
-    if (openFileDialog.ShowModal() == wxID_CANCEL) {
-        return; // 사용자가 취소함
-    }
-    
-    wxString filePath = openFileDialog.GetPath();
-    
-    // Use Controller to load image with default BGR format
-    std::string filePathStr = filePath.ToStdString();
-    std::string imageId = m_controller->LoadImageFromFile(filePathStr, ImageData::ImageFormat::BGR);
-    
-    if (imageId.empty()) {
-        wxMessageBox(wxString::FromUTF8("이미지를 불러올 수 없습니다: ") + filePath, 
-                    wxString::FromUTF8("오류"), wxOK | wxICON_ERROR);
-        m_imageWindow->ClearImage();
-        return;
-    }
-    
-    m_currentMat = m_controller->GetImage(imageId);
-    
-    if (m_currentMat.empty()) {
-        wxMessageBox(wxString::FromUTF8("이미지를 불러올 수 없습니다: ") + filePath, 
-                    wxString::FromUTF8("오류"), wxOK | wxICON_ERROR);
-        m_imageWindow->ClearImage();
-        return;
-    }
-    
-    // Display the loaded image in the scrolled window
-    m_imageWindow->SetImage(m_currentMat);
-    
-    // Store image metadata
-    m_imageOrigFileName = wxFileName(filePath).GetName();
-    m_imageOrigWidth = m_currentMat.cols;
-    m_imageOrigHeight = m_currentMat.rows;
-    
-    // Update UI with stored metadata
-    UpdateImageMetadata(true, m_currentMat);
-    
-    wxMessageBox(wxString::FromUTF8("이미지가 성공적으로 로드되었습니다: ") + filePath, 
-                wxString::FromUTF8("성공"), wxOK | wxICON_INFORMATION);
-}
-
-void MainFrame::OnOpenViewerButtonClick(wxCommandEvent& event) {
+// TODO : Later
+void MainFrame::OnCropRequest(int x, int y, int width, int height) {
     if (m_currentMat.empty()) {
         wxMessageBox(wxString::FromUTF8("먼저 이미지 파일을 열어주세요."), 
                     wxString::FromUTF8("알림"), wxOK | wxICON_INFORMATION);
-        return;
-    }
-    
-    // 싱글톤 팩토리에 요청
-    wxFrame* viewer = WindowManager::Get().CreateWindow(WindowType::TYPE_VIEWER, this, m_currentMat);
-    if (viewer) {
-        viewer->Show();
-    }
-}
-
-void MainFrame::OnCropButtonClick(wxCommandEvent& event) {
-    if (m_currentMat.empty()) {
-        wxMessageBox(wxString::FromUTF8("먼저 이미지 파일을 열어주세요."), 
-                    wxString::FromUTF8("알림"), wxOK | wxICON_INFORMATION);
-        return;
-    }
-    
-    // Get crop values from text controls
-    long x, y, width, height;
-    if (!m_cropX->GetValue().ToLong(&x) || !m_cropY->GetValue().ToLong(&y) || 
-        !m_cropWidth->GetValue().ToLong(&width) || !m_cropHeight->GetValue().ToLong(&height)) {
-        wxMessageBox(wxString::FromUTF8("잘못된 숫자 값입니다."), 
-                    wxString::FromUTF8("오류"), wxOK | wxICON_ERROR);
         return;
     }
     
@@ -239,32 +148,24 @@ void MainFrame::OnCropButtonClick(wxCommandEvent& event) {
     m_croppedMat = ImageProcessor::CropImage(m_currentMat, x, y, width, height);
     
     // Update UI with stored metadata
-    UpdateImageMetadata(false, m_croppedMat);
-    
+    // UpdateImageMetadata(false, m_croppedMat);
+    // m_isOriginal = false;
+    // UpdateImageMetadata()
     wxMessageBox(wxString::FromUTF8("이미지가 성공적으로 잘렸습니다."), 
                 wxString::FromUTF8("성공"), wxOK | wxICON_INFORMATION);
 }
 
-void MainFrame::UpdateImageMetadata(bool isOriginal, cv::Mat& mat) {
-    if (isOriginal){
-        m_imageOrigWidth = mat.cols;
-        m_imageOrigHeight = mat.rows;
-        // Update image name display
-        m_imageOrigNameText->SetLabel(wxString::FromUTF8("파일명: ") + m_imageOrigFileName);
-        
-        // Update image size display
-        wxString imageSize = wxString::Format(wxString::FromUTF8("크기: %dx%d"), m_imageOrigWidth, m_imageOrigHeight);
-        m_imageOrigSizeText->SetLabel(imageSize);
+// void MainFrame::UpdateImageMetadata(bool isOriginal, wxString imageOrigFileName, int imageOrigWidth, int imageOrigHeight) {
+void MainFrame::UpdateImageMetadata() {
+    m_imageOrigFileName = m_controller->GetCurrentImageFileName();
+    if (m_isOriginal){
+        m_imageOrigWidth = m_controller->GetCurrentImageWidth();
+        m_imageOrigHeight = m_controller->GetCurrentImageHeight();
     }
     else {
-        m_imageCroppedWidth = mat.cols;
-        m_imageCroppedHeight = mat.rows;
-        // Update image name display
-        m_imageCroppedNameText->SetLabel(wxString::FromUTF8("파일명: ") + m_imageOrigFileName + "_cropped");
-        
-        // Update image size display
-        wxString imageSize = wxString::Format(wxString::FromUTF8("크기: %dx%d"), m_imageCroppedWidth, m_imageCroppedHeight);
-        m_imageCroppedSizeText->SetLabel(imageSize);
+        m_imageCroppedWidth = m_controller->GetCurrentImageWidth();
+        m_imageCroppedHeight = m_controller->GetCurrentImageHeight();
+
     }
 }
 
@@ -281,12 +182,25 @@ class MyApp : public wxApp {
         }
     };
     
-void MainFrame::OnBoundingBoxDisplayToggle(wxCommandEvent& event) {
-    bool showBoundingBoxes = m_showBoundingBoxCheckbox->GetValue();
-    if (m_imageWindow) {
-        m_imageWindow->SetBoundingBoxDisplayMode(showBoundingBoxes);
+
+void MainFrame::OnDataChanged(const std::string& imageId, DataChangeType changeType, ObserverSenderType observerSenderType, bool notifyToAll) {
+    switch (changeType) {
+        case DataChangeType::ImageLoaded:
+        case DataChangeType::ImageRemoved:
+        case DataChangeType::ImageMetadataChanged:
+        case DataChangeType::BoundingBoxAdded:
+        case DataChangeType::BoundingBoxRemoved:
+        case DataChangeType::BoundingBoxModified:
+        case DataChangeType::BoundingBoxSelected:
+        case DataChangeType::BoundingBoxDisplayToggle:
+            UpdateImageMetadata();
+            break;
+        case DataChangeType::ProcessingCompleted:
+            // Handle processing completion
+            break;
     }
 }
+
 
 wxIMPLEMENT_APP(MyApp);
 

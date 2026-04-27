@@ -34,6 +34,7 @@ target_sources(gui
         zoom_frame.cpp
         window_factory.cpp
         scrolled_image_window.cpp
+        scrolled_image_window_segmentation.cpp
         image_edit_gui.cpp
     PUBLIC
     FILE_SET CXX_MODULES FILES 
@@ -47,6 +48,8 @@ target_sources(gui
         image_viewer_frame.cppm
         zoom_frame.cppm
         window_factory.cppm
+        image_info_panel.cppm
+        bounding_box_control_panel.cppm
         scrolled_image_window.cppm
 )
 

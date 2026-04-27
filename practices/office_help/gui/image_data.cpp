@@ -59,8 +59,21 @@ int ImageData::FindBoundingBoxAt(int x, int y) const {
     return -1;
 }
 
+BoundingBox ImageData::GetBoundingBox(int index) {
+    if (index < 0 || index >= m_boundingBoxes.size()) {
+        return BoundingBox();
+    }
+    return m_boundingBoxes[index];
+}
+
 void ImageData::ClearBoundingBoxes() {
     m_boundingBoxes.clear();
+}
+
+void ImageData::ModifyBoundingBox(int index, const BoundingBox& box) {
+    if (index >= 0 && index < m_boundingBoxes.size()) {
+        m_boundingBoxes[index] = box;
+    }
 }
 
 

@@ -17,7 +17,7 @@ public:
     static ImageDataRepository& GetInstance();
     
     // Instance management
-    std::string CreateImageData(const cv::Mat& image, const std::string& name, ImageData::ImageFormat format);
+    std::string CreateImageData(const cv::Mat& image, const std::string& name, const std::string& imageFileName, ImageData::ImageFormat format);
     bool RemoveImageData(const std::string& id);
     ImageData* GetImageData(const std::string& id);
     std::vector<std::string> GetAllIds() const;

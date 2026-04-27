@@ -55,6 +55,12 @@
 },
 {
   "directory": "C:/Users/kwoncy/Documents/dev/mygit/practices/office_help/gui/build",
+  "command": "c:\\clang+llvm-22.1.3-x86_64-pc-windows-msvc\\bin\\clang++.exe -DUNICODE -D_UNICODE -isystem C:/vcpkg/installed/x64-windows/lib/mswu -isystem C:/vcpkg/installed/x64-windows/include -isystem C:/vcpkg/installed/x64-windows/include/opencv4 -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -g -Xclang -gcodeview @CMakeFiles\\gui.dir\\scrolled_image_window_segmentation.cpp.obj.modmap -o CMakeFiles\\gui.dir\\scrolled_image_window_segmentation.cpp.obj -c C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\scrolled_image_window_segmentation.cpp",
+  "file": "C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\scrolled_image_window_segmentation.cpp",
+  "output": "CMakeFiles\\gui.dir\\scrolled_image_window_segmentation.cpp.obj"
+},
+{
+  "directory": "C:/Users/kwoncy/Documents/dev/mygit/practices/office_help/gui/build",
   "command": "c:\\clang+llvm-22.1.3-x86_64-pc-windows-msvc\\bin\\clang++.exe -DUNICODE -D_UNICODE -isystem C:/vcpkg/installed/x64-windows/lib/mswu -isystem C:/vcpkg/installed/x64-windows/include -isystem C:/vcpkg/installed/x64-windows/include/opencv4 -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -g -Xclang -gcodeview @CMakeFiles\\gui.dir\\image_edit_gui.cpp.obj.modmap -o CMakeFiles\\gui.dir\\image_edit_gui.cpp.obj -c C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\image_edit_gui.cpp",
   "file": "C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\image_edit_gui.cpp",
   "output": "CMakeFiles\\gui.dir\\image_edit_gui.cpp.obj"
@@ -112,6 +118,18 @@
   "command": "c:\\clang+llvm-22.1.3-x86_64-pc-windows-msvc\\bin\\clang++.exe -DUNICODE -D_UNICODE -isystem C:/vcpkg/installed/x64-windows/lib/mswu -isystem C:/vcpkg/installed/x64-windows/include -isystem C:/vcpkg/installed/x64-windows/include/opencv4 -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -g -Xclang -gcodeview @CMakeFiles\\gui.dir\\window_factory.cppm.obj.modmap -o CMakeFiles\\gui.dir\\window_factory.cppm.obj -c C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\window_factory.cppm",
   "file": "C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\window_factory.cppm",
   "output": "CMakeFiles\\gui.dir\\window_factory.cppm.obj"
+},
+{
+  "directory": "C:/Users/kwoncy/Documents/dev/mygit/practices/office_help/gui/build",
+  "command": "c:\\clang+llvm-22.1.3-x86_64-pc-windows-msvc\\bin\\clang++.exe -DUNICODE -D_UNICODE -isystem C:/vcpkg/installed/x64-windows/lib/mswu -isystem C:/vcpkg/installed/x64-windows/include -isystem C:/vcpkg/installed/x64-windows/include/opencv4 -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -g -Xclang -gcodeview @CMakeFiles\\gui.dir\\image_info_panel.cppm.obj.modmap -o CMakeFiles\\gui.dir\\image_info_panel.cppm.obj -c C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\image_info_panel.cppm",
+  "file": "C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\image_info_panel.cppm",
+  "output": "CMakeFiles\\gui.dir\\image_info_panel.cppm.obj"
+},
+{
+  "directory": "C:/Users/kwoncy/Documents/dev/mygit/practices/office_help/gui/build",
+  "command": "c:\\clang+llvm-22.1.3-x86_64-pc-windows-msvc\\bin\\clang++.exe -DUNICODE -D_UNICODE -isystem C:/vcpkg/installed/x64-windows/lib/mswu -isystem C:/vcpkg/installed/x64-windows/include -isystem C:/vcpkg/installed/x64-windows/include/opencv4 -O0 -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -g -Xclang -gcodeview @CMakeFiles\\gui.dir\\bounding_box_control_panel.cppm.obj.modmap -o CMakeFiles\\gui.dir\\bounding_box_control_panel.cppm.obj -c C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\bounding_box_control_panel.cppm",
+  "file": "C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help\\gui\\bounding_box_control_panel.cppm",
+  "output": "CMakeFiles\\gui.dir\\bounding_box_control_panel.cppm.obj"
 },
 {
   "directory": "C:/Users/kwoncy/Documents/dev/mygit/practices/office_help/gui/build",

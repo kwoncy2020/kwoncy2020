@@ -13,10 +13,13 @@ ImageDataRepository& ImageDataRepository::GetInstance() {
     return instance;
 }
 
-std::string ImageDataRepository::CreateImageData(const cv::Mat& image, const std::string& name, ImageData::ImageFormat format) {
+std::string ImageDataRepository::CreateImageData(const cv::Mat& image, const std::string& name, const std::string& imageFileName, ImageData::ImageFormat format) {
+    if (imageFileName.empty() || image.empty()) {
+        return "";
+    }
     std::lock_guard<std::mutex> lock(m_mutex);
     
-    auto id = GenerateUniqueId();
+    auto id = imageFileName+"_"+GenerateUniqueId() + "_stored_order";
     m_imageDataMap[id] = std::make_unique<ImageData>(image, name.empty() ? id : name, format);
     m_nameMap[id] = name.empty() ? id : name;
     

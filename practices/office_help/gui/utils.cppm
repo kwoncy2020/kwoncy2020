@@ -5,6 +5,19 @@ module;
 export module Utils;
 
 
+export struct BoundingBox {
+    int x, y, width, height;
+    
+    BoundingBox() : x(0), y(0), width(0), height(0) {}
+    BoundingBox(int x_, int y_, int w_, int h_) : x(x_), y(y_), width(w_), height(h_) {}
+    
+    bool Contains(int px, int py) const {
+        return px >= x && px <= x + width && py >= y && py <= y + height;
+    }
+};
+
+
+
 export class Utils{
 public:
     static std::tuple<int,int,int,int> getBoxValuesFromPoints(int x1, int y1, int x2, int y2, std::string convertS = "xywh") {

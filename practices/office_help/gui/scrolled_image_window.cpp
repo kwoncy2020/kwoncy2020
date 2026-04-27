@@ -5,23 +5,33 @@ module;
 
 module ScrolledImageWindow;
 import ImageData;
-import ImageProcessor;
+// import ImageProcessor;
 import ImageEditController;
 import Utils;
 
 ScrolledImageWindow::ScrolledImageWindow(wxWindow* parent, wxWindowID id, 
                                        const wxPoint& pos, 
                                        const wxSize& size)
-    : wxScrolledWindow(parent, id, pos, size), 
-      m_isDragging(false), m_leftPressed(false), m_rightPressed(false), m_showBoundingBoxes(true),
-      m_isDrawingBox(false), m_currentBoxScreenStartPos(0, 0),
-      m_scrollRatioX(1.0), m_scrollRatioY(1.0),
-      m_isCacheValid(false),
-      m_controller(nullptr) {
+    : wxScrolledWindow(parent, id, pos, size),
+        // ImageEditController::IDataObserver(),
+        m_isDragging(false), 
+        m_leftPressed(false), 
+        m_rightPressed(false), 
+        m_showBoundingBoxes(true),
+        m_isSegmentationMode(false),
+        m_showSegmentedImage(false),
+        m_isDrawingBox(false), 
+        m_currentBoxScreenStartPos(0, 0),
+        m_scrollRatioX(1.0), 
+        m_scrollRatioY(1.0),
+        m_isCacheValid(false),
+        m_controller(nullptr)
+    {
     
     SetScrollRate(10, 10); // Scroll rate in pixels
     SetBackgroundColour(wxColour(240, 240, 240));
-    
+    SetImage(m_originalImage);
+
     // Enable double buffering for smoother rendering
     SetBackgroundStyle(wxBG_STYLE_PAINT);  // Enable double buffering
     SetDoubleBuffered(true);               // Explicit double buffering
@@ -35,6 +45,7 @@ ScrolledImageWindow::ScrolledImageWindow(wxWindow* parent, wxWindowID id,
     Bind(wxEVT_LEFT_UP, &ScrolledImageWindow::OnMouseUp, this);
     Bind(wxEVT_RIGHT_UP, &ScrolledImageWindow::OnMouseUp, this);
     Bind(wxEVT_MOTION, &ScrolledImageWindow::OnMouseMove, this);
+    Bind(wxEVT_LEFT_DCLICK, &ScrolledImageWindow::OnMouseDoubleClick, this);
     Bind(wxEVT_RIGHT_DCLICK, &ScrolledImageWindow::OnMouseDoubleClick, this);
     Bind(wxEVT_MOUSE_CAPTURE_LOST, &ScrolledImageWindow::OnMouseCaptureLost, this);
     
@@ -46,7 +57,7 @@ void ScrolledImageWindow::SetImage(const cv::Mat& image) {
     if (image.empty()) {
         m_originalImage = cv::Mat();
         m_imageDisplayMatRGB = cv::Mat();
-        SetVirtualSize(100, 100); // Default size when no image
+        SetVirtualSize(100, 100); // Default size when no image, no required since already min size set.
         m_imageWidth = 0;
         m_imageHeight = 0;
         Refresh();
@@ -66,8 +77,13 @@ void ScrolledImageWindow::SetImage(const cv::Mat& image) {
     // Get display image from controller
     m_imageDisplayMatRGB = m_controller->GetDisplayImage(m_currentImageDataId, m_showBoundingBoxes, ImageData::ImageFormat::RGB);
     
-    // Update cache with new image
+    // Reset segmentation mode
+    SetSegmentationMode(false);
+
+    // Update cache and initialize segmentation member from orig image 
     m_cachedDisplayBitmap = wxBitmap(wxImage(m_imageDisplayMatRGB.cols, m_imageDisplayMatRGB.rows, m_imageDisplayMatRGB.data, true));
+    m_segmentationImageRGB_Bitmap = m_cachedDisplayBitmap.GetSubBitmap(wxRect(0, 0, m_imageDisplayMatRGB.cols, m_imageDisplayMatRGB.rows));
+    m_segmentationMask = InitializeSegmentationMask(m_originalImage);
     m_isCacheValid = true;
     
     // Set virtual size to image dimensions
@@ -79,9 +95,12 @@ void ScrolledImageWindow::SetImage(const cv::Mat& image) {
     Refresh();
 }
 
+
 void ScrolledImageWindow::ClearImage() {
     m_originalImage = cv::Mat();
     m_imageDisplayMatRGB = cv::Mat();
+    m_segmentationImageRGB_Bitmap = wxBitmap();
+    m_segmentationMask = cv::Mat();
     m_imageWidth = 0;
     m_imageHeight = 0;
     SetVirtualSize(100, 100);
@@ -100,24 +119,32 @@ void ScrolledImageWindow::OnPaint(wxPaintEvent& event) {
     wxPaintDC dc(this);
     PrepareDC(dc);   
     
-    if (m_imageDisplayMatRGB.empty()) {
+    // Use cached bitmap if available, otherwise convert from Mat
+    // Cache must always on when the image is ready.
+    if (m_imageDisplayMatRGB.empty() || !m_isCacheValid) {
+        // TODO: if m_imageDisplayMatRGB is empty then make cache first.
         // Draw placeholder text when no image is loaded
-        dc.SetBrush(GetBackgroundColour());
-        dc.Clear();
-        dc.SetTextForeground(wxColour(128, 128, 128));
-        dc.DrawText(wxString::FromUTF8("No image loaded"), wxPoint(10, 10));
-        return;
+        // dc.SetBrush(GetBackgroundColour());
+        // dc.Clear();
+        // dc.SetTextForeground(wxColour(128, 128, 128));
+        // dc.DrawText(wxString::FromUTF8("No image loaded"), wxPoint(10, 10));
+        // return;
     }
     
-    // Use cached bitmap if available, otherwise convert from Mat
+
     wxBitmap bitmap;
-    if (!m_showBoundingBoxes && m_isCacheValid) {
+    if (!m_showBoundingBoxes && !m_showSegmentedImage) {
+        // Show cached imaged if bounding boxes and segment mask are not shown.
         bitmap = m_cachedDisplayBitmap;
-    } else {
-        // get bounded display image if boxes exist
+    } else if (m_showBoundingBoxes && !m_showSegmentedImage)
+     {
+        // get bounded display image if boxes exist, using m_imageDisplayMatRGB
         cv::Mat boxedImage = m_controller->GetDisplayBoxedImage(m_currentImageDataId, m_imageDisplayMatRGB);
         wxImage wxImg(boxedImage.cols, boxedImage.rows, boxedImage.data, true);
         bitmap = wxBitmap(wxImg);
+    } else {
+        // use m_segmentationImageRGB
+        bitmap = m_segmentationImageRGB_Bitmap;
     }
     
     // Draw image at origin of scrolled window
@@ -145,6 +172,13 @@ void ScrolledImageWindow::OnMouseDown(wxMouseEvent& event) {
     }
     if (!m_showBoundingBoxes) {
         m_isDrawingBox = false;
+
+    } else if (m_isSegmentationMode) {
+        m_isDrawingBox = false;
+        wxPoint curPos = event.GetPosition();
+        int imageX, imageY;
+        ConvertAxisToImageAxis(curPos.x, curPos.y, imageX, imageY);
+        SetWXBitmapPixelAt(m_segmentationImageRGB_Bitmap, imageX, imageY);
     }
 
     if (m_isDrawingBox&&m_showBoundingBoxes) {
@@ -269,15 +303,45 @@ void ScrolledImageWindow::OnMouseMove(wxMouseEvent& event) {
 
 
 void ScrolledImageWindow::OnMouseDoubleClick(wxMouseEvent& event) {
-    if (event.RightDClick() && !m_imageDisplayMatRGB.empty()) {
+    if (event.LeftDClick() && !m_imageDisplayMatRGB.empty() && m_controller) {
+        // Get mouse position in image coordinates
+        wxPoint pos = event.GetPosition();
+        int imageX, imageY;
+        ConvertAxisToImageAxis(pos.x, pos.y, imageX, imageY);
+        
+        // Find bounding box at this position
+        if (!m_currentImageDataId.empty()) {
+            ImageData* imageData = m_controller->GetImageData(m_currentImageDataId);
+            if (imageData) {
+                std::vector<BoundingBox> boxes = imageData->GetBoundingBoxes(m_currentImageDataId);
+                
+                // Check if click is inside any bounding box
+                for (size_t i = 0; i < boxes.size(); ++i) {
+                    const auto& box = boxes[i];
+                    if (imageX >= box.x && imageX < box.x + box.width &&
+                        imageY >= box.y && imageY < box.y + box.height) {
+                        
+                        // Select this bounding box in controller
+                        // Observer pattern will automatically update UI
+                        m_controller->SetSelectedBoundingBoxIndex(m_currentImageDataId, static_cast<int>(i));
+                        
+                        Refresh();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    else if (event.RightDClick() && !m_imageDisplayMatRGB.empty()) {
         // Get mouse position in image coordinates
         wxPoint pos = event.GetPosition();
         int imageX, imageY;
         ConvertAxisToImageAxis(pos.x, pos.y, imageX, imageY);
         
         // Remove bounding box at this position
-        if (m_controller && !m_currentImageDataId.empty()) {
+        if (!m_currentImageDataId.empty()) {
             m_controller->RemoveBoundingBoxAt(m_currentImageDataId, imageX, imageY);
+            m_controller->UnSetSelectedBoundingBoxIndex(m_currentImageDataId);
         }
         
         Refresh();
@@ -308,9 +372,6 @@ void ScrolledImageWindow::DrawBoundingBoxes(wxPaintDC& dc) {
             
         } 
     }
-    
-    // Note: Static bounding boxes are now drawn on the image itself
-    // by ImageProcessor::DrawBoundingBoxesOnImage() in SetImage()
 }
 
 void ScrolledImageWindow::updateValuesByResize() {
@@ -397,25 +458,31 @@ void ScrolledImageWindow::SetBoundingBoxDisplayMode(bool showBoundingBoxes) {
 
 void ScrolledImageWindow::SetController(ImageEditController* controller) {
     m_controller = controller;
+    
+    // Register this window as an observer (add to existing observers)
+    if (m_controller) {
+        m_controller->AddDataObserver(this);
+    }
 }
 
 ImageEditController* ScrolledImageWindow::GetController() const {
     return m_controller;
 }
 
-// Multi-instance ImageData management methods
-std::string ScrolledImageWindow::CreateNewImageData(const cv::Mat& image, const std::string& name) {
+
+// if imageFileName is empty then return "". this should be prevent wrong loading since the repository didn't check validation.
+std::string ScrolledImageWindow::CreateNewImageData(const cv::Mat& image, const std::string& name, const std::string& imageFileName, ImageData::ImageFormat format) {
     if (!m_controller) {
         return ""; // Controller must be set
     }
     
-    std::string id = m_controller->LoadImageFromMat(image, name);
+    std::string id = m_controller->LoadImageFromMat(image, name, imageFileName, format);
     SetImageDataById(id);
     return id;
 }
 
 void ScrolledImageWindow::SetImageDataById(const std::string& id) {
-    if (!m_controller) {
+    if (!m_controller || id.empty()) {
         return; // Controller must be set
     }
     
@@ -432,6 +499,7 @@ void ScrolledImageWindow::SetImageDataById(const std::string& id) {
         m_imageHeight = m_imageDisplayMatRGB.rows;
         
         updateValuesByResize();
+        
         Refresh();
     }
 }
@@ -463,4 +531,42 @@ void ScrolledImageWindow::OnMouseCaptureLost(wxMouseCaptureLostEvent& event) {
     
     // Skip the event to allow default processing
     event.Skip();
+}
+
+// TODO: resize window should be handled by parent window
+void ScrolledImageWindow::OnDataChanged(const std::string& imageId, DataChangeType changeType, ObserverSenderType observerSenderType, bool notifyToAll) {
+    
+    switch (changeType) {
+        case DataChangeType::ImageLoaded:
+            // Update display when new image is loaded
+
+            SetImageDataById(imageId);
+            Refresh();
+            break;
+            
+        case DataChangeType::BoundingBoxAdded:
+        case DataChangeType::BoundingBoxRemoved:
+        case DataChangeType::BoundingBoxModified:
+        case DataChangeType::BoundingBoxSelected:
+        case DataChangeType::BoundingBoxUnSelected:
+        case DataChangeType::BoundingBoxDisplayToggle:
+            m_showBoundingBoxes = m_controller->GetBoundingBoxDisplayToggle();
+            Refresh(); // Force repaint
+            break;
+            
+        case DataChangeType::ImageMetadataChanged:
+            // Metadata changes don't affect display
+            break;
+            
+        case DataChangeType::ProcessingCompleted:
+            // Handle processing completion if needed
+            break;
+            
+        case DataChangeType::ImageRemoved:
+            // Clear display if current image is removed
+            if (m_currentImageDataId == imageId) {
+                ClearImage();
+            }
+            break;
+    }
 }
