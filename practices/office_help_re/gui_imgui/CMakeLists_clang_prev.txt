@@ -1,0 +1,145 @@
+cmake_minimum_required(VERSION 3.30)
+
+# CMakeLists.txt 맨 윗줄에 추가
+set(CMAKE_C_COMPILER_ID "Clang")
+set(CMAKE_CXX_COMPILER_ID "Clang")
+
+# Clang이 MSVC처럼 동작하게 드라이버 모드 고정 (이게 핵심)
+set(CMAKE_CXX_FLAGS "--driver-mode=cl")
+set(CMAKE_C_FLAGS "--driver-mode=cl")
+
+# 링커를 명시적으로 lld-link로 지정
+set(CMAKE_LINKER "lld-link.exe")
+
+if(NOT CMAKE_BUILD_TYPE)
+set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Choose the type of build." FORCE)
+
+endif()
+
+if(MSVC OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # Clang이 MSVC 스타일(/옵션)을 이해하도록 드라이버 모드 강제
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --driver-mode=cl")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --driver-mode=cl")
+    
+    # 명령줄 길이 초과 방지 (Response file 강제 사용)
+    set(CMAKE_NINJA_FORCE_RESPONSE_FILE ON CACHE BOOL "" FORCE)
+endif()
+
+# 1. vcpkg 경로 설정 (본인의 경로로 수정하세요)
+set(VCPKG_PATH "C:/vcpkg") 
+# 2. 핵심 설정: project() 호출 전에 선언해야 vcpkg가 올바르게 작동합니다.
+set(CMAKE_TOOLCHAIN_FILE "${VCPKG_PATH}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "" FORCE)
+set(VCPKG_TARGET_TRIPLET "x64-windows-static" CACHE STRING "" FORCE)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "" FORCE)
+
+# 빌드 후 compile_commands.json을 루트 폴더로 복사 (clangd 인식용)
+if(EXISTS "${CMAKE_BINARY_DIR}/compile_commands.json")
+    execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_BINARY_DIR}/compile_commands.json"
+        "${CMAKE_SOURCE_DIR}/compile_commands.json")
+endif()
+
+# Clang이 모르는 인자(-ignore:4221)를 만나도 에러 내지 말고 무시하게 강제
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-argument")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unknown-argument")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wno-unknown-argument -Xlinker /ignore:4221")
+
+# 명령줄 길이 해결 (이게 없으면 무조건 터집니다)
+set(CMAKE_NINJA_FORCE_RESPONSE_FILE ON CACHE BOOL "Force response file")
+
+
+project(MyImGuiProject LANGUAGES CXX)
+message(STATUS "현재 타겟 아키텍처: ${CMAKE_SIZEOF_VOID_P}")
+
+# clang -ignore:4221 옵션을 사용하지 않도록 설정.
+set(CMAKE_CXX_USE_RESPONSE_FILE_FOR_LIBRARIES 0)
+set(CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS 0)
+set(CMAKE_CXX_USE_RESPONSE_FILE_FOR_INCLUDES 0)
+
+
+set(CMAKE_CXX_STANDARD 20)
+# 4. 정적 런타임(/MT) 강제 설정 (정적 라이브러리 사용 시 필수)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+# 5. 라이브러리 찾기
+find_package(imgui CONFIG REQUIRED)
+find_package(glfw3 CONFIG REQUIRED)
+find_package(OpenCV REQUIRED)
+
+# 6. 헤더 디렉토리 설정
+include_directories(${CMAKE_SOURCE_DIR}/include)
+
+if(MSVC)
+    # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zi") # 예시
+    # 표준 헤더 경로를 명시적으로 추가
+    include_directories(SYSTEM "C:/Program Files (x86)/Windows Kits/10/Include/10.0.26100.0/ucrt")
+    include_directories(SYSTEM "C:/Program Files (x86)/Windows Kits/10/Include/10.0.26100.0/um")
+    include_directories(SYSTEM "C:/Program Files (x86)/Windows Kits/10/Include/10.0.26100.0/shared")
+    include_directories(SYSTEM "C:/Program Files (x86)/Microsoft Visual Studio/18/BuildTools/VC/Tools/MSVC/14.44.35207/include")
+endif()
+
+
+# 7. 소스 파일 수집
+file(GLOB_RECURSE CORE_SOURCES 
+    "src/core/*.cpp"
+    "src/image/*.cpp"
+    "src/backends/*.cpp"
+    "src/sources/*.cpp"
+    "src/graphics/*.cpp"
+    "src/processing/*.cpp"
+    "src/processing/algorithms/*.cpp"
+    "src/ui/*.cpp"
+    "src/utils/*.cpp"
+)
+
+# 8. 실행 파일 생성
+add_executable(${PROJECT_NAME} 
+    # main.cpp
+    main_temp.cpp
+    # ${CORE_SOURCES}
+)
+
+# 9. 라이브러리 링크
+target_link_libraries(${PROJECT_NAME} PRIVATE 
+    imgui::imgui        # ImGui 핵심 및 백엔드 소스가 포함됨
+    glfw                # GLFW 라이브러리
+    ${OpenCV_LIBS}      # OpenCV 라이브러리들
+    opengl32            # 윈도우 기본 OpenGL 라이브러리
+)
+
+# ImGui 백엔드(GLFW/OpenGL3) 직접 링크 (필요한 경우)
+find_package(glfw3 CONFIG REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
+
+# 1. 문제의 인자(-ignore:4221)를 전역적으로 제거
+set(target_name MyImGuiProject) # 본인의 타겟 이름으로 확인
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # 모든 타겟의 링크 인터페이스에서 문제의 플래그 제거
+    string(REPLACE "-ignore:4221" "" CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
+    string(REPLACE "/ignore:4221" "" CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
+    
+    # 특정 라이브러리가 강제로 주입하는 속성 제거
+    set_target_properties(${target_name} PROPERTIES LINK_FLAGS "")
+    
+    # 2. "명령줄이 너무 깁니다" 에러 해결 (응답 파일 사용 강제)
+    # Ninja 빌드 시 인자들을 파일로 모아서 전달하게 합니다.
+    set(CMAKE_NINJA_FORCE_RESPONSE_FILE ON CACHE INTERNAL "")
+    set(CMAKE_CXX_USE_RESPONSE_FILE_FOR_LIBRARIES 1)
+    set(CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS 1)
+endif()
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # 1. 기존에 잘못 들어간 플래그들을 초기화
+    set_target_properties(MyImGuiProject PROPERTIES LINK_FLAGS "")
+
+    # 2. 모든 MSVC 스타일 옵션 앞에 -Xlinker를 붙여서 전달
+    target_link_options(MyImGuiProject PRIVATE 
+        "-Xlinker" "/subsystem:console"
+        "-Xlinker" "/ignore:4221"
+        "-Xlinker" "/MANIFEST:EMBED"
+    )
+
+    # 3. 알 수 없는 인자 에러 무시 (보험용)
+    add_compile_options("-Wno-unknown-argument")
+endif()

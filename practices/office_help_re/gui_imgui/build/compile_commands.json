@@ -1,0 +1,8 @@
+[
+{
+  "directory": "C:/Users/kwoncy/Documents/dev/mygit/practices/office_help_re/gui_imgui/build",
+  "command": "C:\\PROGRA~2\\MICROS~2\\18\\BUILDT~1\\VC\\Tools\\MSVC\\1450~1.357\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -IC:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help_re\\gui_imgui\\include -external:IC:\\vcpkg\\installed\\x64-windows-static\\include -external:IC:\\vcpkg\\installed\\x64-windows-static\\include\\opencv4 -external:W0 /DWIN32 /D_WINDOWS /EHsc /Ob0 /Od /RTC1 -std:c++20 -MTd -Zi @CMakeFiles\\MyImGuiProject.dir\\main_temp.cpp.obj.modmap /FoCMakeFiles\\MyImGuiProject.dir\\main_temp.cpp.obj /FdCMakeFiles\\MyImGuiProject.dir\\ /FS -c C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help_re\\gui_imgui\\main_temp.cpp",
+  "file": "C:\\Users\\kwoncy\\Documents\\dev\\mygit\\practices\\office_help_re\\gui_imgui\\main_temp.cpp",
+  "output": "CMakeFiles\\MyImGuiProject.dir\\main_temp.cpp.obj"
+}
+]

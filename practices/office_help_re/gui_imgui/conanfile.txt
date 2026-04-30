@@ -1,0 +1,14 @@
+[requires]
+opencv/4.12.0
+
+[options]
+opencv/*:shared=False
+
+[generators]
+CMakeDeps
+CMakeToolchain
+
+[layout]
+cmake_layout
+
+

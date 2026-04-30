@@ -1,0 +1,79 @@
+// =============================================================================
+// [1] 도구 및 경로 하드코딩
+// =============================================================================
+.ClangPath      = 'C:\src\clang+llvm-22.1.3-x86_64-pc-windows-msvc\bin'
+.Compiler       = '$ClangPath$\clang-cl.exe'
+.Librarian      = '$ClangPath$\lld-link.exe'
+
+.MSVCPath       = 'C:\src\mvsc_tools\VC\Tools\MSVC\14.44.35207'
+.WinSDKPath     = 'C:\src\winsdk_kits\10\Lib\10.0.17763.0'
+
+.InstallDir     = 'C:\src\opencv_install'
+
+// =============================================================================
+// [2] 옵션 하드코딩
+// =============================================================================
+//.BaseOptions    // [2] 옵션 하드코딩 (모든 모듈의 include 경로를 강제로 주입)
+.BaseOptions    = '/nologo /c %1 /Fo%2 /O2 /std:c++20'
+                + ' /I"C:/src/opencv/include"'
+                // 각 모듈별 헤더 경로 하드코딩
+                + ' /I"C:/src/opencv-4.13.0/modules/core/include"'
+                + ' /I"C:/src/opencv-4.13.0/modules/imgproc/include"'
+                + ' /I"C:/src/opencv-4.13.0/modules/imgcodecs/include"'
+                + ' /I"C:/src/opencv-4.13.0/modules/videoio/include"'
+                + ' /I"C:/src/opencv-4.13.0/modules/highgui/include"'
+                + ' /I"C:/src/opencv-4.13.0/modules/video/include"'
+                + ' /I"C:/src/opencv-4.13.0/modules/calib3d/include"'
+                + ' /I"C:/src/opencv-4.13.0/modules/objdetect/include"'
+                + ' /I"C:/src/opencv-4.13.0/modules/dnn/include"'
+                + ' /I"C:/src/opencv-4.13.0/modules/features2d/include"'
+                + ' /I"C:/src/opencv-4.13.0/modules/flann/include"'
+                + ' /I"C:/src/opencv-4.13.0/modules/ml/include"'
+                + ' /I"C:/src/opencv-4.13.0/modules/photo/include"'
+                + ' /I"C:/src/opencv-4.13.0/modules/stitching/include"'
+                + ' /I"C:/src/opencv-4.13.0/modules/gapi/include"'
+                + ' /I"C:/src/opencv-4.13.0/modules/world/include"'
+                // 시스템 경로
+                + ' /I"$MSVCPath$/include"'
+                + ' /I"C:/src/winsdk_kits/10/Include/10.0.17763.0/ucrt"'
+                + ' /I"C:/src/winsdk_kits/10/Include/10.0.17763.0/um"'
+                + ' /I"C:/src/winsdk_kits/10/Include/10.0.17763.0/shared"'
+
+.LibOptions     = '/lib /nologo /out:%2 %1'
+
+// =============================================================================
+// [3] 정적 라이브러리 빌드 규칙
+// =============================================================================
+Library( 'OpenCV-Static' )
+{
+    .CompilerInputPath  = 'C:\src\opencv-4.13.0\modules\' 
+    .CompilerOutputPath = 'out\obj\'
+    .CompilerOptions    = .BaseOptions
+    
+    .LibrarianOutput    = 'out\lib\opencv_hardcoded.lib'
+    .LibrarianOptions   = .LibOptions
+}
+
+// =============================================================================
+// [4] 설치 (Install) - 이번에는 .DestPath로 확실히 수정했습니다.
+// =============================================================================
+Copy( 'Install-Lib' )
+{
+    .Source      = 'out\lib\opencv_hardcoded.lib'
+    .Dest        = '$InstallDir$\lib\opencv_hardcoded.lib'
+}
+
+CopyDir( 'Install-Headers' )
+{
+    .SourcePaths = 'C:\src\opencv-4.13.0\include\'
+    .Dest    = '$InstallDir$\include\' // ★ .Dest가 아니라 .DestPath가 맞습니다.
+    .Recursive   = true
+}
+
+// =============================================================================
+// [5] 최종 실행 그룹
+// =============================================================================
+Alias( 'all' )
+{
+    .Targets = { 'OpenCV-Static', 'Install-Lib', 'Install-Headers' }
+}
